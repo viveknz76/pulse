@@ -1,0 +1,43 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import TeamMembers from "./pages/TeamMembers";
+import TeamMemberDetail from "./pages/TeamMemberDetail";
+import CheckInForm from "./pages/CheckInForm";
+import Review from "./pages/Review";
+import { Toaster } from "./components/ui/sonner";
+import { PageLoading } from "./components/PageLoading";
+
+function PrivateRoute({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <PageLoading />;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+export default function App() {
+  return (
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/team" element={<TeamMembers />} />
+          <Route path="/team/:id" element={<TeamMemberDetail />} />
+          <Route path="/check-ins/:id" element={<CheckInForm />} />
+          <Route path="/review" element={<Review />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster position="bottom-right" />
+    </>
+  );
+}

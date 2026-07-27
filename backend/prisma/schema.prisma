@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Cadence {
+  WEEKLY
+  FORTNIGHTLY
+  MONTHLY
+}
+
+enum CheckInStatus {
+  SCHEDULED
+  COMPLETED
+  SKIPPED
+}
+
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+model TeamMember {
+  id          String       @id @default(cuid())
+  name        String
+  role        String?
+  email       String?
+  cadence     Cadence      @default(FORTNIGHTLY)
+  active      Boolean      @default(true)
+  startDate   DateTime     @default(now())
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  checkIns      CheckIn[]
+  actionItems   ActionItem[]
+  talkingPoints TalkingPoint[]
+}
+
+model CheckIn {
+  id            String        @id @default(cuid())
+  teamMember    TeamMember    @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  teamMemberId  String
+
+  scheduledDate DateTime
+  completedAt   DateTime?
+  status        CheckInStatus @default(SCHEDULED)
+
+  wins          String?
+  challenges    String?
+  growthNotes   String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  actionItems   ActionItem[]
+  talkingPoints TalkingPoint[]
+
+  @@index([teamMemberId, scheduledDate])
+}
+
+model ActionItem {
+  id             String            @id @default(cuid())
+  description    String
+  status         ActionItemStatus  @default(OPEN)
+  dueDate        DateTime?
+  completedAt    DateTime?
+
+  teamMember     TeamMember        @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  teamMemberId   String
+
+  checkIn        CheckIn?          @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  checkInId      String?
+
+  carriedOverFrom   ActionItem?    @relation("CarryOver", fields: [carriedOverFromId], references: [id])
+  carriedOverFromId String?        @unique
+  carriedOverTo     ActionItem?    @relation("CarryOver")
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([teamMemberId, status])
+  @@index([dueDate])
+}
+
+model TalkingPoint {
+  id         String    @id @default(cuid())
+  content    String
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  teamMemberId String
+
+  checkIn   CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  checkInId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamMemberId, resolved])
+}
