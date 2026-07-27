@@ -50,10 +50,10 @@ function NavItem({
     <Link
       to={to}
       className={cn(
-        "flex items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-sm font-semibold transition-colors",
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors",
         active
-          ? "bg-[var(--primary-tint)] text-primary hover:bg-[var(--primary-tint)]"
-          : "text-muted-foreground hover:bg-black/[0.04]"
+          ? "bg-white/10 text-foreground"
+          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
       )}
     >
       {children}
@@ -72,9 +72,9 @@ export default function Layout() {
   const name = user?.name || user?.email || "";
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="sticky top-0 flex h-screen w-[var(--sidebar-width)] shrink-0 flex-col border-r border-border bg-background p-7">
-        <div className="mb-10 pl-1 text-[1.7rem] font-bold tracking-tight">Pulse</div>
+    <div className="flex min-h-screen w-full gap-4 bg-background p-4 text-foreground">
+      <aside className="flex w-[var(--sidebar-width)] shrink-0 flex-col p-3">
+        <div className="mb-8 pl-1 text-xl font-semibold tracking-tight">Pulse</div>
         <nav className="flex flex-1 flex-col gap-1">
           <NavItem to="/" active={isDashboardActive}>
             <DashboardIcon />
@@ -102,7 +102,7 @@ export default function Layout() {
           </div>
         </div>
       </aside>
-      <main className="max-w-[900px] flex-1 px-14 py-12">
+      <main className="flex-1 overflow-y-auto rounded-lg bg-panel p-10 ring-1 ring-white/10">
         <Outlet />
       </main>
     </div>

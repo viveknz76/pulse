@@ -7,7 +7,7 @@ import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
 
 const CARD_CLASS =
-  "rounded-xl border border-border bg-card px-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]";
+  "rounded-xl border border-border bg-card px-5";
 const ROW_CLASS =
   "flex flex-wrap items-center justify-between gap-4 border-b border-border py-3.5 text-sm last:border-b-0";
 const ACTION_LINK_CLASS =

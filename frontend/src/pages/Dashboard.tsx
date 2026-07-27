@@ -26,9 +26,8 @@ function greetingWord(): string {
 }
 
 const CARD_BASE =
-  "rounded-xl border border-border bg-card p-5 transition-[transform,box-shadow] duration-150 hover:-translate-y-px";
-const CARD_SHADOW =
-  "shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_10px_rgba(0,0,0,0.08)]";
+  "rounded-xl border border-border bg-card p-5 transition-colors duration-150 hover:bg-white/[0.03]";
+const CARD_SHADOW = "";
 
 export default function Dashboard() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);

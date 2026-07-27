@@ -138,7 +138,7 @@ export default function TeamMemberDetail() {
         <p className="text-sm text-muted-foreground">No talking points queued up.</p>
       )}
       {openTalkingPoints.length > 0 && (
-        <ul className="mb-10 rounded-xl border border-border bg-card px-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]">
+        <ul className="mb-10 rounded-xl border border-border bg-card px-5">
           {openTalkingPoints.map((t) =>
             editingPointId === t.id ? (
               <li key={t.id} className="border-b border-border py-3.5 last:border-b-0">
@@ -202,7 +202,7 @@ export default function TeamMemberDetail() {
         <p className="text-sm text-muted-foreground">No open action items.</p>
       )}
       {openActionItems.length > 0 && (
-        <ul className="mb-10 rounded-xl border border-border bg-card px-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]">
+        <ul className="mb-10 rounded-xl border border-border bg-card px-5">
           {openActionItems.map((a) => (
             <li
               key={a.id}
@@ -228,7 +228,7 @@ export default function TeamMemberDetail() {
         {completedCheckIns.map((c) => (
           <div
             key={c.id}
-            className="rounded-xl border border-border border-l-2 border-l-primary bg-card p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]"
+            className="rounded-xl border border-border border-l-2 border-l-primary bg-card p-6"
           >
             <div className="mb-2.5 text-[0.85rem] font-semibold text-foreground">
               {new Date(c.completedAt || c.scheduledDate).toLocaleDateString()}

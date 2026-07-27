@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const TITLE_SIZES = {
-  default: "text-[2.4rem] mb-7",
-  md: "text-[2.1rem] mb-8",
-  sm: "mb-0 text-[1.9rem]",
+  default: "text-2xl mb-6",
+  md: "text-xl mb-7",
+  sm: "mb-0 text-xl",
 };
 
 export function PageTitle({
@@ -16,14 +16,14 @@ export function PageTitle({
   className?: string;
 }) {
   return (
-    <h1 className={cn("font-bold tracking-tight text-foreground", TITLE_SIZES[size], className)}>
+    <h1 className={cn("font-semibold tracking-tight text-foreground", TITLE_SIZES[size], className)}>
       {children}
     </h1>
   );
 }
 
 const LABEL_VARIANTS = {
-  default: "text-muted-foreground",
+  default: "text-foreground",
   attention: "text-[var(--warning-text)]",
   success: "text-[var(--success-text)]",
 };
@@ -40,7 +40,7 @@ export function SectionLabel({
   return (
     <p
       className={cn(
-        "mb-4 text-[0.76rem] font-semibold tracking-wide uppercase",
+        "mb-4 border-b border-border pb-3 text-sm font-semibold",
         LABEL_VARIANTS[variant],
         className
       )}

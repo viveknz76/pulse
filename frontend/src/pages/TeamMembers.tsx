@@ -82,7 +82,7 @@ export default function TeamMembers() {
       <PageTitle>Team members</PageTitle>
 
       <form
-        className="mb-7 flex flex-wrap items-center gap-2.5 rounded-xl border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]"
+        className="mb-7 flex flex-wrap items-center gap-2.5 rounded-xl border border-border bg-card p-4"
         onSubmit={handleSubmit}
       >
         <Input
@@ -126,7 +126,7 @@ export default function TeamMembers() {
       {!members ? (
         <PageLoading />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -159,7 +159,7 @@ export default function TeamMembers() {
                   <TableCell>{CADENCE_LABELS[m.cadence]}</TableCell>
                   <TableCell>{new Date(m.nextDueDate).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant={m.active ? "success" : "secondary"} showDot={false}>
+                    <Badge variant={m.active ? "success" : "secondary"}>
                       {m.active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
