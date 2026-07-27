@@ -38,6 +38,10 @@ export default function Dashboard() {
   }, []);
 
   async function startCheckIn(member: TeamMember) {
+    if (member.activeCheckInId) {
+      navigate(`/check-ins/${member.activeCheckInId}`);
+      return;
+    }
     const checkIn = await api.post<{ id: string }>("/api/check-ins", {
       teamMemberId: member.id,
       scheduledDate: new Date().toISOString(),
@@ -99,7 +103,7 @@ export default function Dashboard() {
               </Badge>
               <div className="mt-3.5 flex items-center gap-2.5">
                 <Button size="sm" onClick={() => startCheckIn(m)}>
-                  Start check-in
+                  {m.activeCheckInId ? "Resume check-in" : "Start check-in"}
                 </Button>
                 <Link
                   to={`/team/${m.id}`}
@@ -127,7 +131,7 @@ export default function Dashboard() {
             <Badge>Due {new Date(m.nextDueDate).toLocaleDateString()}</Badge>
             <div className="mt-3.5 flex items-center gap-2.5">
               <Button size="sm" variant="outline" onClick={() => startCheckIn(m)}>
-                Start early
+                {m.activeCheckInId ? "Resume check-in" : "Start early"}
               </Button>
               <Link
                 to={`/team/${m.id}`}

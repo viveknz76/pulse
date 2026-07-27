@@ -13,6 +13,7 @@ export interface TeamMember {
   notes?: string | null;
   nextDueDate: string;
   lastCompletedAt?: string | null;
+  activeCheckInId?: string | null;
   checkIns?: CheckIn[];
   actionItems?: ActionItem[];
   talkingPoints?: TalkingPoint[];

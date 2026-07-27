@@ -23,7 +23,7 @@ const createSchema = z.object({
   scheduledDate: z.string().datetime(),
 });
 
-const completeSchema = z.object({
+const draftSchema = z.object({
   wins: z.string().optional(),
   challenges: z.string().optional(),
   growthNotes: z.string().optional(),
@@ -31,63 +31,23 @@ const completeSchema = z.object({
   talkingPoints: z.array(talkingPointInput).default([]),
 });
 
-// GET /api/check-ins?teamMemberId=xxx
-router.get("/", asyncHandler(async (req, res) => {
-  const teamMemberId = req.query.teamMemberId as string | undefined;
-  const checkIns = await prisma.checkIn.findMany({
-    where: teamMemberId ? { teamMemberId } : undefined,
-    orderBy: { scheduledDate: "desc" },
-    include: { actionItems: true, teamMember: true },
-  });
-  res.json(checkIns);
-}));
+// Shared by /save (draft, stays SCHEDULED) and /complete (marks COMPLETED).
+// Persists notes plus any action-item/talking-point edits made in the form.
+async function applyCheckInUpdate(
+  checkIn: { id: string; teamMemberId: string },
+  data: z.infer<typeof draftSchema>,
+  { complete }: { complete: boolean }
+) {
+  const { wins, challenges, growthNotes, actionItems, talkingPoints } = data;
 
-// GET /api/check-ins/:id
-router.get("/:id", asyncHandler(async (req, res) => {
-  const checkIn = await prisma.checkIn.findUnique({
-    where: { id: req.params.id },
-    include: { actionItems: true, talkingPoints: true, teamMember: true },
-  });
-  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
-  res.json(checkIn);
-}));
-
-// POST /api/check-ins  — start/schedule a new check-in
-router.post("/", asyncHandler(async (req, res) => {
-  const parsed = createSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-
-  const checkIn = await prisma.checkIn.create({
-    data: {
-      teamMemberId: parsed.data.teamMemberId,
-      scheduledDate: new Date(parsed.data.scheduledDate),
-      status: "SCHEDULED",
-    },
-  });
-  res.status(201).json(checkIn);
-}));
-
-// POST /api/check-ins/:id/complete
-// Records notes and this check-in's action items (new + carried-over/updated),
-// then marks the check-in COMPLETED.
-router.post("/:id/complete", asyncHandler(async (req, res) => {
-  const parsed = completeSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-
-  const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
-  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
-
-  const { wins, challenges, growthNotes, actionItems, talkingPoints } = parsed.data;
-
-  const result = await prisma.$transaction(async (tx: any) => {
-    const updated = await tx.checkIn.update({
+  return prisma.$transaction(async (tx: any) => {
+    await tx.checkIn.update({
       where: { id: checkIn.id },
       data: {
         wins,
         challenges,
         growthNotes,
-        status: "COMPLETED",
-        completedAt: new Date(),
+        ...(complete ? { status: "COMPLETED", completedAt: new Date() } : {}),
       },
     });
 
@@ -102,7 +62,7 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
           throw new Error(`Action item ${item.id} does not belong to this team member`);
         }
 
-        const data = {
+        const itemData = {
           description: item.description,
           status: item.status,
           dueDate: item.dueDate ? new Date(item.dueDate) : null,
@@ -114,14 +74,14 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
           // does not change any historical association.
           await tx.actionItem.update({
             where: { id: existing.id },
-            data,
+            data: itemData,
           });
         } else if (existing.carriedOverTo?.checkInId === checkIn.id) {
-          // Make completing a check-in safe to retry without creating another
+          // Make saving/completing safe to retry without creating another
           // successor for the same historical item.
           await tx.actionItem.update({
             where: { id: existing.carriedOverTo.id },
-            data,
+            data: itemData,
           });
         } else if (existing.carriedOverTo) {
           throw new Error(`Action item ${item.id} has already been carried over`);
@@ -130,7 +90,7 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
           // linked successor under this check-in.
           await tx.actionItem.create({
             data: {
-              ...data,
+              ...itemData,
               teamMemberId: checkIn.teamMemberId,
               checkInId: checkIn.id,
               carriedOverFromId: existing.id,
@@ -187,7 +147,80 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
       include: { actionItems: true, talkingPoints: true },
     });
   });
+}
 
+// GET /api/check-ins?teamMemberId=xxx
+router.get("/", asyncHandler(async (req, res) => {
+  const teamMemberId = req.query.teamMemberId as string | undefined;
+  const checkIns = await prisma.checkIn.findMany({
+    where: teamMemberId ? { teamMemberId } : undefined,
+    orderBy: { scheduledDate: "desc" },
+    include: { actionItems: true, teamMember: true },
+  });
+  res.json(checkIns);
+}));
+
+// GET /api/check-ins/:id
+router.get("/:id", asyncHandler(async (req, res) => {
+  const checkIn = await prisma.checkIn.findUnique({
+    where: { id: req.params.id },
+    include: { actionItems: true, talkingPoints: true, teamMember: true },
+  });
+  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+  res.json(checkIn);
+}));
+
+// POST /api/check-ins  — start a check-in, or resume the team member's
+// existing in-progress one rather than creating a duplicate. A person can
+// only have one non-completed check-in open at a time.
+router.post("/", asyncHandler(async (req, res) => {
+  const parsed = createSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const existing = await prisma.checkIn.findFirst({
+    where: { teamMemberId: parsed.data.teamMemberId, status: "SCHEDULED" },
+    orderBy: { scheduledDate: "desc" },
+  });
+  if (existing) return res.status(200).json(existing);
+
+  const checkIn = await prisma.checkIn.create({
+    data: {
+      teamMemberId: parsed.data.teamMemberId,
+      scheduledDate: new Date(parsed.data.scheduledDate),
+      status: "SCHEDULED",
+    },
+  });
+  res.status(201).json(checkIn);
+}));
+
+// POST /api/check-ins/:id/save
+// Persists notes/action-items/talking-points as a draft — the check-in stays
+// SCHEDULED so the user can come back and keep editing before completing it.
+router.post("/:id/save", asyncHandler(async (req, res) => {
+  const parsed = draftSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
+  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+  if (checkIn.status === "COMPLETED") {
+    return res.status(400).json({ error: "This check-in is already completed" });
+  }
+
+  const result = await applyCheckInUpdate(checkIn, parsed.data, { complete: false });
+  res.json(result);
+}));
+
+// POST /api/check-ins/:id/complete
+// Records notes and this check-in's action items (new + carried-over/updated),
+// then marks the check-in COMPLETED.
+router.post("/:id/complete", asyncHandler(async (req, res) => {
+  const parsed = draftSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
+  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+
+  const result = await applyCheckInUpdate(checkIn, parsed.data, { complete: true });
   res.json(result);
 }));
 

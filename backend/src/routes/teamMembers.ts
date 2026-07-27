@@ -23,28 +23,45 @@ const updateSchema = createSchema.partial().extend({
 
 // GET /api/team-members  — list all, each with computed "next due" date
 router.get("/", asyncHandler(async (_req, res) => {
-  const members = await prisma.teamMember.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      checkIns: {
-        where: { status: "COMPLETED" },
-        orderBy: { scheduledDate: "desc" },
-        take: 1,
-      },
-      _count: {
-        select: {
-          actionItems: true,
+  const [members, activeCheckIns] = await Promise.all([
+    prisma.teamMember.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        checkIns: {
+          where: { status: "COMPLETED" },
+          orderBy: { scheduledDate: "desc" },
+          take: 1,
+        },
+        _count: {
+          select: {
+            actionItems: true,
+          },
         },
       },
-    },
-  });
+    }),
+    // A person can only have one in-progress (SCHEDULED) check-in at a time,
+    // so the UI can offer "Resume" instead of starting a duplicate.
+    prisma.checkIn.findMany({
+      where: { status: "SCHEDULED" },
+      select: { id: true, teamMemberId: true },
+    }),
+  ]);
+
+  const activeByMember = new Map(
+    activeCheckIns.map((c: { id: string; teamMemberId: string }) => [c.teamMemberId, c.id])
+  );
 
   const withNextDue = members.map((m: (typeof members)[number]) => {
     const lastCompleted = m.checkIns[0];
     const anchor = lastCompleted ? lastCompleted.scheduledDate : m.startDate;
     const nextDue = nextDueDate(anchor, m.cadence);
     const { checkIns, ...rest } = m;
-    return { ...rest, nextDueDate: nextDue, lastCompletedAt: lastCompleted?.completedAt ?? null };
+    return {
+      ...rest,
+      nextDueDate: nextDue,
+      lastCompletedAt: lastCompleted?.completedAt ?? null,
+      activeCheckInId: activeByMember.get(m.id) ?? null,
+    };
   });
 
   res.json(withNextDue);
@@ -71,10 +88,13 @@ router.get("/:id", asyncHandler(async (req, res) => {
   const lastCompleted = member.checkIns.find(
     (c: (typeof member.checkIns)[number]) => c.status === "COMPLETED"
   );
+  const activeCheckIn = member.checkIns.find(
+    (c: (typeof member.checkIns)[number]) => c.status === "SCHEDULED"
+  );
   const anchor = lastCompleted ? lastCompleted.scheduledDate : member.startDate;
   const nextDue = nextDueDate(anchor, member.cadence);
 
-  res.json({ ...member, nextDueDate: nextDue });
+  res.json({ ...member, nextDueDate: nextDue, activeCheckInId: activeCheckIn?.id ?? null });
 }));
 
 // POST /api/team-members

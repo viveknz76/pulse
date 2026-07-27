@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
@@ -43,45 +44,58 @@ export default function CheckInForm() {
   const [items, setItems] = useState<DraftActionItem[]>([]);
   const [points, setPoints] = useState<DraftTalkingPoint[]>([]);
   const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  async function loadCheckIn() {
+    if (!id) return;
+    const ci = await api.get<CheckIn>(`/api/check-ins/${id}`);
+    setCheckIn(ci);
+    setWins(ci.wins || "");
+    setChallenges(ci.challenges || "");
+    setGrowthNotes(ci.growthNotes || "");
+
+    // Pull in this person's still-open action items from prior check-ins so
+    // they can be reviewed/updated/carried over as part of this one.
+    const openItems = await api.get<ActionItem[]>(
+      `/api/action-items?teamMemberId=${ci.teamMemberId}&status=OPEN`
+    );
+    const inProgressItems = await api.get<ActionItem[]>(
+      `/api/action-items?teamMemberId=${ci.teamMemberId}&status=IN_PROGRESS`
+    );
+    const priorOpen = [...openItems, ...inProgressItems].filter((a) => a.checkInId !== ci.id);
+    // Items already saved against this check-in from an earlier draft save.
+    const alreadyHere = ci.actionItems || [];
+
+    setItems(
+      [...alreadyHere, ...priorOpen].map((a) => ({
+        id: a.id,
+        description: a.description,
+        status: a.status,
+        dueDate: toDateInput(a.dueDate),
+      }))
+    );
+
+    // Pull in this person's still-open talking points so they can be
+    // checked off (or left for next time) as part of this check-in.
+    const openPoints = await api.get<TalkingPoint[]>(
+      `/api/talking-points?teamMemberId=${ci.teamMemberId}&resolved=false`
+    );
+    const priorOpenPoints = openPoints.filter((t) => t.checkInId !== ci.id);
+    const alreadyHerePoints = ci.talkingPoints || [];
+
+    setPoints(
+      [...alreadyHerePoints, ...priorOpenPoints].map((t) => ({
+        id: t.id,
+        content: t.content,
+        resolved: t.resolved,
+      }))
+    );
+  }
 
   useEffect(() => {
-    if (!id) return;
-    api.get<CheckIn>(`/api/check-ins/${id}`).then(async (ci) => {
-      setCheckIn(ci);
-      setWins(ci.wins || "");
-      setChallenges(ci.challenges || "");
-      setGrowthNotes(ci.growthNotes || "");
-
-      // Pull in this person's still-open action items from prior check-ins so
-      // they can be reviewed/updated/carried over as part of this one.
-      const openItems = await api.get<ActionItem[]>(
-        `/api/action-items?teamMemberId=${ci.teamMemberId}&status=OPEN`
-      );
-      const inProgressItems = await api.get<ActionItem[]>(
-        `/api/action-items?teamMemberId=${ci.teamMemberId}&status=IN_PROGRESS`
-      );
-      const priorOpen = [...openItems, ...inProgressItems].filter((a) => a.checkInId !== ci.id);
-
-      setItems(
-        priorOpen.map((a) => ({
-          id: a.id,
-          description: a.description,
-          status: a.status,
-          dueDate: toDateInput(a.dueDate),
-        }))
-      );
-
-      // Pull in this person's still-open talking points so they can be
-      // checked off (or left for next time) as part of this check-in.
-      const openPoints = await api.get<TalkingPoint[]>(
-        `/api/talking-points?teamMemberId=${ci.teamMemberId}&resolved=false`
-      );
-      setPoints(
-        openPoints
-          .filter((t) => t.checkInId !== ci.id)
-          .map((t) => ({ id: t.id, content: t.content, resolved: false }))
-      );
-    });
+    loadCheckIn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   function addItem() {
@@ -108,26 +122,43 @@ export default function CheckInForm() {
     setPoints(points.filter((_, i) => i !== index));
   }
 
+  function buildPayload() {
+    return {
+      wins,
+      challenges,
+      growthNotes,
+      actionItems: items
+        .filter((it) => it.description.trim())
+        .map((it) => ({
+          id: it.id,
+          description: it.description.trim(),
+          status: it.status,
+          dueDate: it.dueDate ? new Date(it.dueDate).toISOString() : null,
+        })),
+      talkingPoints: points
+        .filter((p) => p.content.trim())
+        .map((p) => ({ id: p.id, content: p.content.trim(), resolved: p.resolved })),
+    };
+  }
+
+  async function handleSaveDraft() {
+    if (!checkIn) return;
+    setSavingDraft(true);
+    try {
+      await api.post(`/api/check-ins/${checkIn.id}/save`, buildPayload());
+      await loadCheckIn();
+      setLastSavedAt(new Date());
+      toast.success("Draft saved — come back anytime to finish it.");
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
   async function handleComplete() {
     if (!checkIn) return;
     setSaving(true);
     try {
-      await api.post(`/api/check-ins/${checkIn.id}/complete`, {
-        wins,
-        challenges,
-        growthNotes,
-        actionItems: items
-          .filter((it) => it.description.trim())
-          .map((it) => ({
-            id: it.id,
-            description: it.description.trim(),
-            status: it.status,
-            dueDate: it.dueDate ? new Date(it.dueDate).toISOString() : null,
-          })),
-        talkingPoints: points
-          .filter((p) => p.content.trim())
-          .map((p) => ({ id: p.id, content: p.content.trim(), resolved: p.resolved })),
-      });
+      await api.post(`/api/check-ins/${checkIn.id}/complete`, buildPayload());
       navigate(`/team/${checkIn.teamMemberId}`);
     } finally {
       setSaving(false);
@@ -249,10 +280,23 @@ export default function CheckInForm() {
         </Button>
       </div>
 
-      <div className="mt-8">
-        <Button size="lg" onClick={handleComplete} disabled={saving}>
-          {saving ? "Saving…" : "Complete check-in"}
+      <div className="mt-8 flex items-center gap-3">
+        <Button size="lg" onClick={handleComplete} disabled={saving || savingDraft}>
+          {saving ? "Completing…" : "Complete check-in"}
         </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={handleSaveDraft}
+          disabled={saving || savingDraft}
+        >
+          {savingDraft ? "Saving…" : "Save draft"}
+        </Button>
+        {lastSavedAt && (
+          <span className="text-[0.8rem] text-muted-foreground">
+            Saved at {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -29,6 +29,10 @@ export default function TeamMemberDetail() {
 
   async function startCheckIn() {
     if (!member) return;
+    if (member.activeCheckInId) {
+      navigate(`/check-ins/${member.activeCheckInId}`);
+      return;
+    }
     const checkIn = await api.post<{ id: string }>("/api/check-ins", {
       teamMemberId: member.id,
       scheduledDate: new Date().toISOString(),
@@ -112,7 +116,9 @@ export default function TeamMemberDetail() {
           <Button variant="outline" onClick={() => setEditing(true)}>
             Edit
           </Button>
-          <Button onClick={startCheckIn}>Start check-in</Button>
+          <Button onClick={startCheckIn}>
+            {member.activeCheckInId ? "Resume check-in" : "Start check-in"}
+          </Button>
         </div>
       </div>
 
