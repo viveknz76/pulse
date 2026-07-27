@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const updateSchema = z.object({
 });
 
 // GET /api/action-items?status=OPEN&teamMemberId=xxx
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const { status, teamMemberId } = req.query as { status?: string; teamMemberId?: string };
   const items = await prisma.actionItem.findMany({
     where: {
@@ -23,10 +24,10 @@ router.get("/", async (req, res) => {
     include: { teamMember: true },
   });
   res.json(items);
-});
+}));
 
 // PATCH /api/action-items/:id
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", asyncHandler(async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -44,7 +45,7 @@ router.patch("/:id", async (req, res) => {
   } catch {
     res.status(404).json({ error: "Action item not found" });
   }
-});
+}));
 
 /**
  * POST /api/action-items/:id/carry-over
@@ -52,7 +53,7 @@ router.patch("/:id", async (req, res) => {
  * incomplete item into the next check-in), and marks the old one as carried
  * over rather than losing it.
  */
-router.post("/:id/carry-over", async (req, res) => {
+router.post("/:id/carry-over", asyncHandler(async (req, res) => {
   const original = await prisma.actionItem.findUnique({ where: { id: req.params.id } });
   if (!original) return res.status(404).json({ error: "Action item not found" });
 
@@ -67,16 +68,16 @@ router.post("/:id/carry-over", async (req, res) => {
   });
 
   res.status(201).json(created);
-});
+}));
 
 // DELETE /api/action-items/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   try {
     await prisma.actionItem.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Action item not found" });
   }
-});
+}));
 
 export default router;

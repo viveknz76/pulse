@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { nextDueDate } from "../utils/cadence";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ const updateSchema = createSchema.partial().extend({
 });
 
 // GET /api/team-members  — list all, each with computed "next due" date
-router.get("/", async (_req, res) => {
+router.get("/", asyncHandler(async (_req, res) => {
   const members = await prisma.teamMember.findMany({
     orderBy: { name: "asc" },
     include: {
@@ -47,10 +48,10 @@ router.get("/", async (_req, res) => {
   });
 
   res.json(withNextDue);
-});
+}));
 
 // GET /api/team-members/:id
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const member = await prisma.teamMember.findUnique({
     where: { id: req.params.id },
     include: {
@@ -74,10 +75,10 @@ router.get("/:id", async (req, res) => {
   const nextDue = nextDueDate(anchor, member.cadence);
 
   res.json({ ...member, nextDueDate: nextDue });
-});
+}));
 
 // POST /api/team-members
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -90,10 +91,10 @@ router.post("/", async (req, res) => {
     },
   });
   res.status(201).json(member);
-});
+}));
 
 // PATCH /api/team-members/:id
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", asyncHandler(async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -111,16 +112,16 @@ router.patch("/:id", async (req, res) => {
   } catch {
     res.status(404).json({ error: "Team member not found" });
   }
-});
+}));
 
 // DELETE /api/team-members/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   try {
     await prisma.teamMember.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Team member not found" });
   }
-});
+}));
 
 export default router;

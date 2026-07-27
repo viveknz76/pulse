@@ -8,6 +8,7 @@ import {
   requireAuth,
   signSession,
 } from "../middleware/auth";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -23,7 +24,7 @@ const cookieOptions = {
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
-router.post("/google", async (req, res) => {
+router.post("/google", asyncHandler(async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Missing Google credential" });
@@ -50,7 +51,7 @@ router.post("/google", async (req, res) => {
     console.error("Google auth verification failed", err);
     return res.status(401).json({ error: "Invalid Google credential" });
   }
-});
+}));
 
 router.post("/logout", (_req, res) => {
   res.clearCookie(AUTH_COOKIE_NAME);

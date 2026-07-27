@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ const completeSchema = z.object({
 });
 
 // GET /api/check-ins?teamMemberId=xxx
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const teamMemberId = req.query.teamMemberId as string | undefined;
   const checkIns = await prisma.checkIn.findMany({
     where: teamMemberId ? { teamMemberId } : undefined,
@@ -39,20 +40,20 @@ router.get("/", async (req, res) => {
     include: { actionItems: true, teamMember: true },
   });
   res.json(checkIns);
-});
+}));
 
 // GET /api/check-ins/:id
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   const checkIn = await prisma.checkIn.findUnique({
     where: { id: req.params.id },
     include: { actionItems: true, talkingPoints: true, teamMember: true },
   });
   if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
   res.json(checkIn);
-});
+}));
 
 // POST /api/check-ins  — start/schedule a new check-in
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -64,12 +65,12 @@ router.post("/", async (req, res) => {
     },
   });
   res.status(201).json(checkIn);
-});
+}));
 
 // POST /api/check-ins/:id/complete
 // Records notes and this check-in's action items (new + carried-over/updated),
 // then marks the check-in COMPLETED.
-router.post("/:id/complete", async (req, res) => {
+router.post("/:id/complete", asyncHandler(async (req, res) => {
   const parsed = completeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -188,16 +189,16 @@ router.post("/:id/complete", async (req, res) => {
   });
 
   res.json(result);
-});
+}));
 
 // DELETE /api/check-ins/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   try {
     await prisma.checkIn.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Check-in not found" });
   }
-});
+}));
 
 export default router;

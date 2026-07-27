@@ -10,6 +10,7 @@ import actionItemRoutes from "./routes/actionItems";
 import talkingPointRoutes from "./routes/talkingPoints";
 import reviewRoutes from "./routes/review";
 import { requireAuth } from "./middleware/auth";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -33,6 +34,9 @@ app.use("/api/check-ins", requireAuth, checkInRoutes);
 app.use("/api/action-items", requireAuth, actionItemRoutes);
 app.use("/api/talking-points", requireAuth, talkingPointRoutes);
 app.use("/api/review", requireAuth, reviewRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Check-in API listening on port ${port}`);

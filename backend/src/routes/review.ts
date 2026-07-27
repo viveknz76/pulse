@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { prisma } from "../db";
 import { currentWeekRange, nextDueDate } from "../utils/cadence";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
 // GET /api/review — weekly review of action items: overdue, due this week, upcoming.
-router.get("/", async (_req, res) => {
+router.get("/", asyncHandler(async (_req, res) => {
   const { start, end } = currentWeekRange();
 
   const [overdue, dueThisWeek, upcoming, noDueDate, recentlyCompleted] = await Promise.all([
@@ -83,6 +84,6 @@ router.get("/", async (_req, res) => {
     recentlyCompleted,
     checkInsDueThisWeek,
   });
-});
+}));
 
 export default router;
