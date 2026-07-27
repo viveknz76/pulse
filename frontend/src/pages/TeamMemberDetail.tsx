@@ -16,6 +16,9 @@ export default function TeamMemberDetail() {
   const [newPoint, setNewPoint] = useState("");
   const [addingPoint, setAddingPoint] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingPointId, setEditingPointId] = useState<string | null>(null);
+  const [editingPointContent, setEditingPointContent] = useState("");
+  const [savingPoint, setSavingPoint] = useState(false);
   const navigate = useNavigate();
 
   function load() {
@@ -54,6 +57,31 @@ export default function TeamMemberDetail() {
   async function removeTalkingPoint(pointId: string) {
     await api.delete(`/api/talking-points/${pointId}`);
     load();
+  }
+
+  function startEditPoint(pointId: string, content: string) {
+    setEditingPointId(pointId);
+    setEditingPointContent(content);
+  }
+
+  function cancelEditPoint() {
+    setEditingPointId(null);
+    setEditingPointContent("");
+  }
+
+  async function saveEditPoint(e: FormEvent) {
+    e.preventDefault();
+    if (!editingPointId || !editingPointContent.trim()) return;
+    setSavingPoint(true);
+    try {
+      await api.patch(`/api/talking-points/${editingPointId}`, {
+        content: editingPointContent.trim(),
+      });
+      cancelEditPoint();
+      load();
+    } finally {
+      setSavingPoint(false);
+    }
   }
 
   if (!member) return <PageLoading />;
@@ -111,27 +139,61 @@ export default function TeamMemberDetail() {
       )}
       {openTalkingPoints.length > 0 && (
         <ul className="mb-10 rounded-xl border border-border bg-card px-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03)]">
-          {openTalkingPoints.map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm last:border-b-0"
-            >
-              <StatusDot status="OPEN" />
-              <span className="flex-1">{t.content}</span>
-              <button
-                className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70"
-                onClick={() => resolveTalkingPoint(t.id)}
+          {openTalkingPoints.map((t) =>
+            editingPointId === t.id ? (
+              <li key={t.id} className="border-b border-border py-3.5 last:border-b-0">
+                <form className="flex items-center gap-2.5" onSubmit={saveEditPoint}>
+                  <StatusDot status="OPEN" />
+                  <Input
+                    autoFocus
+                    className="flex-1"
+                    value={editingPointContent}
+                    onChange={(e) => setEditingPointContent(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70 disabled:opacity-50"
+                    disabled={savingPoint || !editingPointContent.trim()}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="cursor-pointer text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
+                    onClick={cancelEditPoint}
+                  >
+                    Cancel
+                  </button>
+                </form>
+              </li>
+            ) : (
+              <li
+                key={t.id}
+                className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm last:border-b-0"
               >
-                Mark discussed
-              </button>
-              <button
-                className="cursor-pointer text-[0.8rem] font-semibold text-destructive transition-opacity hover:opacity-70"
-                onClick={() => removeTalkingPoint(t.id)}
-              >
-                Remove
-              </button>
-            </li>
-          ))}
+                <StatusDot status="OPEN" />
+                <span className="flex-1">{t.content}</span>
+                <button
+                  className="cursor-pointer text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
+                  onClick={() => startEditPoint(t.id, t.content)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70"
+                  onClick={() => resolveTalkingPoint(t.id)}
+                >
+                  Mark discussed
+                </button>
+                <button
+                  className="cursor-pointer text-[0.8rem] font-semibold text-destructive transition-opacity hover:opacity-70"
+                  onClick={() => removeTalkingPoint(t.id)}
+                >
+                  Remove
+                </button>
+              </li>
+            )
+          )}
         </ul>
       )}
 
