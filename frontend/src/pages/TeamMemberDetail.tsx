@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
 import { TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -7,6 +8,7 @@ import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
 import { EditMemberDialog } from "../components/EditMemberDialog";
+import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -156,20 +158,14 @@ export default function TeamMemberDetail() {
                     value={editingPointContent}
                     onChange={(e) => setEditingPointContent(e.target.value)}
                   />
-                  <button
+                  <IconActionButton
+                    label="Save"
+                    icon={<Check />}
                     type="submit"
-                    className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70 disabled:opacity-50"
+                    variant="primary"
                     disabled={savingPoint || !editingPointContent.trim()}
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
-                    onClick={cancelEditPoint}
-                  >
-                    Cancel
-                  </button>
+                  />
+                  <IconActionButton label="Cancel" icon={<X />} onClick={cancelEditPoint} />
                 </form>
               </li>
             ) : (
@@ -179,24 +175,23 @@ export default function TeamMemberDetail() {
               >
                 <StatusDot status="OPEN" />
                 <span className="flex-1">{t.content}</span>
-                <button
-                  className="cursor-pointer text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
+                <IconActionButton
+                  label="Edit"
+                  icon={<Pencil />}
                   onClick={() => startEditPoint(t.id, t.content)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70"
+                />
+                <IconActionButton
+                  label="Mark discussed"
+                  icon={<Check />}
+                  variant="primary"
                   onClick={() => resolveTalkingPoint(t.id)}
-                >
-                  Mark discussed
-                </button>
-                <button
-                  className="cursor-pointer text-[0.8rem] font-semibold text-destructive transition-opacity hover:opacity-70"
+                />
+                <IconActionButton
+                  label="Remove"
+                  icon={<Trash2 />}
+                  variant="danger"
                   onClick={() => removeTalkingPoint(t.id)}
-                >
-                  Remove
-                </button>
+                />
               </li>
             )
           )}

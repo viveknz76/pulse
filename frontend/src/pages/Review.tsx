@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Clock, Check, CornerUpRight, ArrowUpRight } from "lucide-react";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, ReviewData } from "../types";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
+import { IconActionButton, IconLinkAction } from "../components/IconActionButton";
 
 const CARD_CLASS =
   "rounded-xl border border-border bg-card px-5";
 const ROW_CLASS =
   "flex flex-wrap items-center justify-between gap-4 border-b border-border py-3.5 text-sm last:border-b-0";
-const ACTION_LINK_CLASS =
-  "cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70";
 
 function ActionItemRow({ item, onChanged }: { item: ActionItem; onChanged: () => void }) {
   async function setStatus(status: ActionItemStatus) {
@@ -36,28 +36,32 @@ function ActionItemRow({ item, onChanged }: { item: ActionItem; onChanged: () =>
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3.5 whitespace-nowrap">
+      <div className="flex items-center gap-1">
         {item.status !== "DONE" && (
           <>
             {item.status === "OPEN" && (
-              <button className={ACTION_LINK_CLASS} onClick={() => setStatus("IN_PROGRESS")}>
-                In progress
-              </button>
+              <IconActionButton
+                label="Mark in progress"
+                icon={<Clock />}
+                variant="primary"
+                onClick={() => setStatus("IN_PROGRESS")}
+              />
             )}
-            <button className={ACTION_LINK_CLASS} onClick={() => setStatus("DONE")}>
-              Done
-            </button>
-            <button className={ACTION_LINK_CLASS} onClick={carryOver}>
-              Carry over
-            </button>
+            <IconActionButton
+              label="Mark done"
+              icon={<Check />}
+              variant="primary"
+              onClick={() => setStatus("DONE")}
+            />
+            <IconActionButton
+              label="Carry over"
+              icon={<CornerUpRight />}
+              variant="primary"
+              onClick={carryOver}
+            />
           </>
         )}
-        <Link
-          to={`/team/${item.teamMemberId}`}
-          className="text-[0.8rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          View →
-        </Link>
+        <IconLinkAction label="View person" icon={<ArrowUpRight />} to={`/team/${item.teamMemberId}`} />
       </div>
     </li>
   );

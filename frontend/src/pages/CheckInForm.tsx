@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
 import { PageLoading } from "../components/PageLoading";
+import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -189,13 +191,12 @@ export default function CheckInForm() {
               value={point.content}
               onChange={(e) => updatePoint(index, { content: e.target.value })}
             />
-            <button
-              type="button"
-              className="cursor-pointer text-[0.8rem] font-semibold whitespace-nowrap text-destructive transition-opacity hover:opacity-70"
+            <IconActionButton
+              label="Remove"
+              icon={<Trash2 />}
+              variant="danger"
               onClick={() => removePoint(index)}
-            >
-              Remove
-            </button>
+            />
           </div>
         ))}
         <Button type="button" variant="outline" onClick={addPoint}>
@@ -266,13 +267,12 @@ export default function CheckInForm() {
               value={item.dueDate}
               onChange={(e) => updateItem(index, { dueDate: e.target.value })}
             />
-            <button
-              type="button"
-              className="cursor-pointer text-[0.8rem] font-semibold whitespace-nowrap text-destructive transition-opacity hover:opacity-70"
+            <IconActionButton
+              label="Remove"
+              icon={<Trash2 />}
+              variant="danger"
               onClick={() => removeItem(index)}
-            >
-              Remove
-            </button>
+            />
           </div>
         ))}
         <Button type="button" variant="outline" onClick={addItem}>

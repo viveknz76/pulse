@@ -8,6 +8,7 @@ import TeamMemberDetail from "./pages/TeamMemberDetail";
 import CheckInForm from "./pages/CheckInForm";
 import Review from "./pages/Review";
 import { Toaster } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { PageLoading } from "./components/PageLoading";
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -19,7 +20,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
-    <>
+    <TooltipProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -38,6 +39,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster position="bottom-right" />
-    </>
+    </TooltipProvider>
   );
 }

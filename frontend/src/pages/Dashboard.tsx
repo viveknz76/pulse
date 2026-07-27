@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import { api } from "../api/client";
 import { TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
+import { IconLinkAction } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -105,12 +107,7 @@ export default function Dashboard() {
                 <Button size="sm" onClick={() => startCheckIn(m)}>
                   {m.activeCheckInId ? "Resume check-in" : "Start check-in"}
                 </Button>
-                <Link
-                  to={`/team/${m.id}`}
-                  className="text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
-                >
-                  History →
-                </Link>
+                <IconLinkAction label="View history" icon={<ArrowUpRight />} to={`/team/${m.id}`} />
               </div>
             </div>
           ))}

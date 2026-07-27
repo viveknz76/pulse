@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { Pencil, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { api } from "../api/client";
 import { Cadence, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle } from "../components/Typography";
 import { EditMemberDialog } from "../components/EditMemberDialog";
+import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -164,25 +166,24 @@ export default function TeamMembers() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-end gap-4">
-                      <button
-                        className="cursor-pointer text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
+                    <div className="flex justify-end gap-1">
+                      <IconActionButton
+                        label="Edit"
+                        icon={<Pencil />}
                         onClick={() => setEditingMember(m)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="cursor-pointer text-[0.8rem] font-semibold text-primary transition-opacity hover:opacity-70"
+                      />
+                      <IconActionButton
+                        label={m.active ? "Deactivate" : "Reactivate"}
+                        icon={m.active ? <UserMinus /> : <UserCheck />}
+                        variant="primary"
                         onClick={() => toggleActive(m)}
-                      >
-                        {m.active ? "Deactivate" : "Reactivate"}
-                      </button>
-                      <button
-                        className="cursor-pointer text-[0.8rem] font-semibold text-destructive transition-opacity hover:opacity-70"
+                      />
+                      <IconActionButton
+                        label="Delete"
+                        icon={<Trash2 />}
+                        variant="danger"
                         onClick={() => setPendingDelete(m)}
-                      >
-                        Delete
-                      </button>
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
