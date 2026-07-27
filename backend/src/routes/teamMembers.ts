@@ -54,8 +54,14 @@ router.get("/:id", async (req, res) => {
   const member = await prisma.teamMember.findUnique({
     where: { id: req.params.id },
     include: {
-      checkIns: { orderBy: { scheduledDate: "desc" } },
-      actionItems: { orderBy: { createdAt: "desc" } },
+      checkIns: {
+        orderBy: { scheduledDate: "desc" },
+        include: { actionItems: true },
+      },
+      actionItems: {
+        where: { carriedOverTo: { is: null } },
+        orderBy: { createdAt: "desc" },
+      },
       talkingPoints: { orderBy: { createdAt: "asc" } },
     },
   });

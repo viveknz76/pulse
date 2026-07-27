@@ -10,27 +10,47 @@ router.get("/", async (_req, res) => {
 
   const [overdue, dueThisWeek, upcoming, noDueDate, recentlyCompleted] = await Promise.all([
     prisma.actionItem.findMany({
-      where: { status: { not: "DONE" }, dueDate: { lt: start } },
+      where: {
+        status: { not: "DONE" },
+        dueDate: { lt: start },
+        carriedOverTo: { is: null },
+      },
       include: { teamMember: true },
       orderBy: { dueDate: "asc" },
     }),
     prisma.actionItem.findMany({
-      where: { status: { not: "DONE" }, dueDate: { gte: start, lte: end } },
+      where: {
+        status: { not: "DONE" },
+        dueDate: { gte: start, lte: end },
+        carriedOverTo: { is: null },
+      },
       include: { teamMember: true },
       orderBy: { dueDate: "asc" },
     }),
     prisma.actionItem.findMany({
-      where: { status: { not: "DONE" }, dueDate: { gt: end } },
+      where: {
+        status: { not: "DONE" },
+        dueDate: { gt: end },
+        carriedOverTo: { is: null },
+      },
       include: { teamMember: true },
       orderBy: { dueDate: "asc" },
     }),
     prisma.actionItem.findMany({
-      where: { status: { not: "DONE" }, dueDate: null },
+      where: {
+        status: { not: "DONE" },
+        dueDate: null,
+        carriedOverTo: { is: null },
+      },
       include: { teamMember: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.actionItem.findMany({
-      where: { status: "DONE", completedAt: { gte: start, lte: end } },
+      where: {
+        status: "DONE",
+        completedAt: { gte: start, lte: end },
+        carriedOverTo: { is: null },
+      },
       include: { teamMember: true },
       orderBy: { completedAt: "desc" },
     }),

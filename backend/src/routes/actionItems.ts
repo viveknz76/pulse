@@ -15,6 +15,7 @@ router.get("/", async (req, res) => {
   const { status, teamMemberId } = req.query as { status?: string; teamMemberId?: string };
   const items = await prisma.actionItem.findMany({
     where: {
+      carriedOverTo: { is: null },
       ...(status ? { status: status as any } : {}),
       ...(teamMemberId ? { teamMemberId } : {}),
     },

@@ -92,22 +92,57 @@ router.post("/:id/complete", async (req, res) => {
 
     for (const item of actionItems) {
       if (item.id) {
-        await tx.actionItem.update({
+        const existing = await tx.actionItem.findUnique({
           where: { id: item.id },
-          data: {
-            description: item.description,
-            status: item.status,
-            dueDate: item.dueDate ? new Date(item.dueDate) : null,
-            completedAt: item.status === "DONE" ? new Date() : null,
-            checkInId: checkIn.id,
-          },
+          include: { carriedOverTo: true },
         });
+
+        if (!existing || existing.teamMemberId !== checkIn.teamMemberId) {
+          throw new Error(`Action item ${item.id} does not belong to this team member`);
+        }
+
+        const data = {
+          description: item.description,
+          status: item.status,
+          dueDate: item.dueDate ? new Date(item.dueDate) : null,
+          completedAt: item.status === "DONE" ? new Date() : null,
+        };
+
+        if (existing.checkInId === checkIn.id) {
+          // This item already belongs to the current check-in, so editing it
+          // does not change any historical association.
+          await tx.actionItem.update({
+            where: { id: existing.id },
+            data,
+          });
+        } else if (existing.carriedOverTo?.checkInId === checkIn.id) {
+          // Make completing a check-in safe to retry without creating another
+          // successor for the same historical item.
+          await tx.actionItem.update({
+            where: { id: existing.carriedOverTo.id },
+            data,
+          });
+        } else if (existing.carriedOverTo) {
+          throw new Error(`Action item ${item.id} has already been carried over`);
+        } else {
+          // Preserve the prior item under its original check-in and record a
+          // linked successor under this check-in.
+          await tx.actionItem.create({
+            data: {
+              ...data,
+              teamMemberId: checkIn.teamMemberId,
+              checkInId: checkIn.id,
+              carriedOverFromId: existing.id,
+            },
+          });
+        }
       } else {
         await tx.actionItem.create({
           data: {
             description: item.description,
             status: item.status,
             dueDate: item.dueDate ? new Date(item.dueDate) : null,
+            completedAt: item.status === "DONE" ? new Date() : null,
             teamMemberId: checkIn.teamMemberId,
             checkInId: checkIn.id,
           },
@@ -117,13 +152,20 @@ router.post("/:id/complete", async (req, res) => {
 
     for (const point of talkingPoints) {
       if (point.id) {
+        const existing = await tx.talkingPoint.findUnique({ where: { id: point.id } });
+        if (!existing || existing.teamMemberId !== checkIn.teamMemberId) {
+          throw new Error(`Talking point ${point.id} does not belong to this team member`);
+        }
+
         await tx.talkingPoint.update({
-          where: { id: point.id },
+          where: { id: existing.id },
           data: {
             content: point.content,
             resolved: point.resolved,
             resolvedAt: point.resolved ? new Date() : null,
-            checkInId: checkIn.id,
+            // Attach previously unassigned points to their first check-in, but
+            // never move a point away from an earlier historical check-in.
+            ...(existing.checkInId === null ? { checkInId: checkIn.id } : {}),
           },
         });
       } else {
