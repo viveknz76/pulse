@@ -79,6 +79,7 @@ export default function Layout() {
     <div className="flex min-h-screen w-full gap-4 bg-background p-4 text-foreground">
       <aside className="flex w-[var(--sidebar-width)] shrink-0 flex-col p-3">
         <div className="mb-8 pl-1 text-xl font-semibold tracking-tight">Pulse</div>
+        <div className="mb-8 pl-1 text-sm font-light text-muted-foreground">Thoughtful check-ins, Meaningful momentum</div>
         <nav className="flex flex-1 flex-col gap-1">
           <NavItem to="/" active={isDashboardActive}>
             <DashboardIcon />

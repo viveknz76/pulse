@@ -12,6 +12,7 @@ import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -128,7 +129,7 @@ export default function TeamMembers() {
       {!members ? (
         <PageLoading />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Card className="overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -202,7 +203,7 @@ export default function TeamMembers() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </Card>
       )}
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>

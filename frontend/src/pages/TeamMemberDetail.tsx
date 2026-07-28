@@ -11,6 +11,7 @@ import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TeamMemberDetail() {
   const { id } = useParams<{ id: string }>();
@@ -125,9 +126,9 @@ export default function TeamMemberDetail() {
       </div>
 
       {member.notes && (
-        <p className="mb-8 rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
+        <Card className="mb-8 p-4 text-sm leading-relaxed text-muted-foreground">
           {member.notes}
-        </p>
+        </Card>
       )}
 
       <SectionLabel>Talking points ({openTalkingPoints.length})</SectionLabel>
@@ -227,34 +228,33 @@ export default function TeamMemberDetail() {
       )}
       <div className="flex flex-col gap-4">
         {completedCheckIns.map((c) => (
-          <div
-            key={c.id}
-            className="rounded-xl border border-border border-l-2 border-l-primary bg-card p-6"
-          >
-            <div className="mb-2.5 text-[0.85rem] font-semibold text-foreground">
-              {new Date(c.completedAt || c.scheduledDate).toLocaleDateString()}
-            </div>
-            {c.wins && (
-              <p className="my-1.5 text-[0.92rem] leading-relaxed">
-                <strong>Wins</strong> — {c.wins}
-              </p>
-            )}
-            {c.challenges && (
-              <p className="my-1.5 text-[0.92rem] leading-relaxed">
-                <strong>Challenges</strong> — {c.challenges}
-              </p>
-            )}
-            {c.growthNotes && (
-              <p className="my-1.5 text-[0.92rem] leading-relaxed">
-                <strong>Growth</strong> — {c.growthNotes}
-              </p>
-            )}
-            {c.actionItems.length > 0 && (
-              <p className="my-1.5 text-[0.92rem] leading-relaxed">
-                <strong>Actions</strong> — {c.actionItems.map((a) => a.description).join("; ")}
-              </p>
-            )}
-          </div>
+          <Card key={c.id}>
+            <CardHeader>
+              <CardTitle>{new Date(c.completedAt || c.scheduledDate).toLocaleDateString()}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5 text-[0.92rem] leading-relaxed">
+              {c.wins && (
+                <p>
+                  <strong>Wins</strong> — {c.wins}
+                </p>
+              )}
+              {c.challenges && (
+                <p>
+                  <strong>Challenges</strong> — {c.challenges}
+                </p>
+              )}
+              {c.growthNotes && (
+                <p>
+                  <strong>Growth</strong> — {c.growthNotes}
+                </p>
+              )}
+              {c.actionItems.length > 0 && (
+                <p>
+                  <strong>Actions</strong> — {c.actionItems.map((a) => a.description).join("; ")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
 

@@ -9,7 +9,7 @@ import { PageTitle, SectionLabel } from "../components/Typography";
 import { IconLinkAction } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 function isOverdue(dateStr: string): boolean {
   return new Date(dateStr).getTime() < Date.now();
@@ -27,9 +27,7 @@ function greetingWord(): string {
   return "Good evening";
 }
 
-const CARD_BASE =
-  "rounded-xl border border-border bg-card p-5 transition-colors duration-150 hover:bg-overlay-subtle";
-const CARD_SHADOW = "";
+const CARD_BASE = "p-5 transition-colors duration-150 hover:bg-overlay-subtle";
 
 export default function Dashboard() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
@@ -90,7 +88,7 @@ export default function Dashboard() {
       {due.length > 0 && (
         <div className="mb-10 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
           {due.map((m) => (
-            <div key={m.id} className={cn(CARD_BASE, CARD_SHADOW)}>
+            <Card key={m.id} className={CARD_BASE}>
               <div className="mb-3 flex items-center gap-2.5">
                 <MemberAvatar id={m.id} name={m.name} />
                 <div>
@@ -109,7 +107,7 @@ export default function Dashboard() {
                 </Button>
                 <IconLinkAction label="View history" icon={<ArrowUpRight />} to={`/team/${m.id}`} />
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -117,7 +115,7 @@ export default function Dashboard() {
       <SectionLabel>Upcoming</SectionLabel>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
         {upcoming.map((m) => (
-          <div key={m.id} className={CARD_BASE}>
+          <Card key={m.id} className={CARD_BASE}>
             <div className="mb-3 flex items-center gap-2.5">
               <MemberAvatar id={m.id} name={m.name} />
               <div>
@@ -130,14 +128,9 @@ export default function Dashboard() {
               <Button size="sm" variant="outline" onClick={() => startCheckIn(m)}>
                 {m.activeCheckInId ? "Resume check-in" : "Start early"}
               </Button>
-              <Link
-                to={`/team/${m.id}`}
-                className="text-[0.8rem] font-semibold text-muted-foreground transition-opacity hover:opacity-70"
-              >
-                History →
-              </Link>
+              <IconLinkAction label="View history" icon={<ArrowUpRight />} to={`/team/${m.id}`} />
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
