@@ -129,11 +129,13 @@ export default function CheckInForm() {
   }, [loadCheckIn]);
 
   function addItem() {
-    setItems([...items, { description: "", status: "OPEN", dueDate: "" }]);
+    setItems((current) => [...current, { description: "", status: "OPEN", dueDate: "" }]);
   }
 
   function updateItem(index: number, patch: Partial<DraftActionItem>) {
-    setItems(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+    setItems((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+    );
   }
 
   function removeItem(index: number) {
@@ -141,15 +143,19 @@ export default function CheckInForm() {
     if (item.id) {
       setDeletedActionItemIds((ids) => [...new Set([...ids, item.id!])]);
     }
-    setItems(items.filter((_, i) => i !== index));
+    setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   function addPoint() {
-    setPoints([...points, { content: "", resolved: false }]);
+    setPoints((current) => [...current, { content: "", resolved: false }]);
   }
 
   function updatePoint(index: number, patch: Partial<DraftTalkingPoint>) {
-    setPoints(points.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+    setPoints((current) =>
+      current.map((point, pointIndex) =>
+        pointIndex === index ? { ...point, ...patch } : point
+      )
+    );
   }
 
   function removePoint(index: number) {
@@ -157,7 +163,7 @@ export default function CheckInForm() {
     if (point.id) {
       setDeletedTalkingPointIds((ids) => [...new Set([...ids, point.id!])]);
     }
-    setPoints(points.filter((_, i) => i !== index));
+    setPoints((current) => current.filter((_, pointIndex) => pointIndex !== index));
   }
 
   function buildSummaryText(): string {
