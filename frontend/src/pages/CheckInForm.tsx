@@ -7,6 +7,7 @@ import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
 import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
+import { DatePicker } from "../components/DatePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -261,11 +262,10 @@ export default function CheckInForm() {
                 <SelectItem value="DONE">Done</SelectItem>
               </SelectContent>
             </Select>
-            <Input
+            <DatePicker
               className="w-[150px] shrink-0"
-              type="date"
               value={item.dueDate}
-              onChange={(e) => updateItem(index, { dueDate: e.target.value })}
+              onChange={(dueDate) => updateItem(index, { dueDate })}
             />
             <IconActionButton
               label="Remove"
