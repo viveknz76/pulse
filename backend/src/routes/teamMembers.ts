@@ -85,10 +85,20 @@ router.get("/:id", asyncHandler(async (req, res) => {
         },
       },
       actionItems: {
-        where: { carriedOverTo: { is: null }, deletedAt: null },
+        where: {
+          carriedOverTo: { is: null },
+          deletedAt: null,
+          OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
+        },
         orderBy: { createdAt: "desc" },
       },
-      talkingPoints: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+      talkingPoints: {
+        where: {
+          deletedAt: null,
+          OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!member || member.deletedAt) return res.status(404).json({ error: "Team member not found" });

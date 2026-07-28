@@ -263,9 +263,20 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
 // DELETE /api/check-ins/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
   try {
-    await prisma.checkIn.update({
-      where: { id: req.params.id },
-      data: { deletedAt: new Date() },
+    const deletedAt = new Date();
+    await prisma.$transaction(async (tx) => {
+      await tx.checkIn.update({
+        where: { id: req.params.id, deletedAt: null },
+        data: { deletedAt },
+      });
+      await tx.actionItem.updateMany({
+        where: { checkInId: req.params.id, deletedAt: null },
+        data: { deletedAt },
+      });
+      await tx.talkingPoint.updateMany({
+        where: { checkInId: req.params.id, deletedAt: null },
+        data: { deletedAt },
+      });
     });
     res.status(204).send();
   } catch {

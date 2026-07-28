@@ -19,6 +19,7 @@ router.get("/", asyncHandler(async (req, res) => {
       carriedOverTo: { is: null },
       deletedAt: null,
       teamMember: { deletedAt: null },
+      OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
       ...(status ? { status: status as any } : {}),
       ...(teamMemberId ? { teamMemberId } : {}),
     },

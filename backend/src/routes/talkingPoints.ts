@@ -22,6 +22,7 @@ router.get("/", asyncHandler(async (req, res) => {
     where: {
       deletedAt: null,
       teamMember: { deletedAt: null },
+      OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
       ...(teamMemberId ? { teamMemberId } : {}),
       ...(resolved !== undefined ? { resolved: resolved === "true" } : {}),
     },

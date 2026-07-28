@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { currentWeekRange, nextDueDate } from "../utils/cadence";
 import { asyncHandler } from "../middleware/asyncHandler";
@@ -9,7 +10,11 @@ const router = Router();
 router.get("/", asyncHandler(async (_req, res) => {
   const { start, end } = currentWeekRange();
 
-  const notDeleted = { deletedAt: null, teamMember: { deletedAt: null } } as const;
+  const notDeleted: Prisma.ActionItemWhereInput = {
+    deletedAt: null,
+    teamMember: { deletedAt: null },
+    OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
+  };
 
   const [overdue, dueThisWeek, upcoming, noDueDate, recentlyCompleted] = await Promise.all([
     prisma.actionItem.findMany({
