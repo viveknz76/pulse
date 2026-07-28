@@ -38,6 +38,13 @@ export interface CheckIn {
   teamMember?: TeamMember;
 }
 
+export interface PrivateWin {
+  id: string;
+  text: string;
+  date: string;
+  teamMember: Pick<TeamMember, "id" | "name" | "avatarUrl" | "avatarSeed">;
+}
+
 export interface TalkingPoint {
   id: string;
   content: string;

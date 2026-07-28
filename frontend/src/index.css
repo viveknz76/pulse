@@ -7,10 +7,10 @@
  * Design tokens only — no component rules live here. Everything else is
  * Tailwind utility classes + shadcn/ui primitives in src/components/ui.
  *
- * Pulse uses indigo as its brand colour while keeping lime/rose/amber
- * exclusively for semantic status. Colors are defined twice — :root (light)
- * and .dark (dark) — so the whole app re-themes by toggling the .dark class
- * on <html>; @theme inline below maps both to the same Tailwind utilities.
+ * Pulse uses indigo as its brand colour, a six-colour energy palette for
+ * celebratory identity moments, and explicit semantic status colours.
+ * Colors are defined twice — :root (light) and .dark (dark) — so the whole
+ * app re-themes by toggling the .dark class on <html>.
  */
 :root {
   --radius: 0.75rem;
@@ -35,6 +35,14 @@
   --brand-glow: rgba(99, 102, 241, 0.22);
   --brand-border: rgba(79, 70, 229, 0.2);
 
+  --energy-teal: #0f766e;
+  --energy-amber: #b45309;
+  --energy-coral: #be123c;
+  --energy-sky: #0369a1;
+  --energy-plum: #7e22ce;
+  --energy-slate: #475569;
+  --energy-on: #ffffff;
+
   --secondary: rgba(79, 70, 229, 0.06);
   --secondary-foreground: #3730a3;
 
@@ -47,15 +55,15 @@
 
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
-  --destructive-tint: rgba(225, 29, 72, 0.08);
+  --destructive-tint: rgba(225, 29, 72, 0.13);
   --destructive-text: #be123c;
 
   --success: #65a30d;
-  --success-tint: rgba(101, 163, 13, 0.08);
+  --success-tint: rgba(101, 163, 13, 0.13);
   --success-text: #4d7c0f;
 
   --warning: #d97706;
-  --warning-tint: rgba(217, 119, 6, 0.08);
+  --warning-tint: rgba(217, 119, 6, 0.13);
   --warning-text: #b45309;
 
   --border: rgba(24, 24, 27, 0.12);
@@ -90,6 +98,14 @@
   --brand-glow: rgba(99, 102, 241, 0.28);
   --brand-border: rgba(129, 140, 248, 0.24);
 
+  --energy-teal: #2dd4bf;
+  --energy-amber: #f59e0b;
+  --energy-coral: #fb7185;
+  --energy-sky: #38bdf8;
+  --energy-plum: #c084fc;
+  --energy-slate: #94a3b8;
+  --energy-on: #0f172a;
+
   --secondary: rgba(129, 140, 248, 0.1);
   --secondary-foreground: #c7d2fe;
 
@@ -102,15 +118,15 @@
 
   --destructive: #fb64b6;
   --destructive-foreground: #ffffff;
-  --destructive-tint: rgba(251, 100, 182, 0.1);
+  --destructive-tint: rgba(251, 100, 182, 0.15);
   --destructive-text: #fb64b6;
 
   --success: #bbf451;
-  --success-tint: rgba(147, 226, 0, 0.1);
+  --success-tint: rgba(147, 226, 0, 0.15);
   --success-text: #bbf451;
 
   --warning: #fbbf24;
-  --warning-tint: rgba(251, 191, 36, 0.1);
+  --warning-tint: rgba(251, 191, 36, 0.15);
   --warning-text: #fbbf24;
 
   --border: rgba(255, 255, 255, 0.13);

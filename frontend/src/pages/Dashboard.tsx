@@ -5,12 +5,16 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Clock3,
+  LockKeyhole,
   PartyPopper,
   PlayCircle,
+  Quote,
   Sparkles,
+  Trophy,
 } from "lucide-react";
 import { api } from "../api/client";
-import { TeamMember } from "../types";
+import { ENERGY_COLORS, ENERGY_ON_COLOR } from "../lib/energyPalette";
+import { PrivateWin, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
@@ -51,6 +55,14 @@ function greetingWord(): string {
 const CARD_BASE =
   "p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-border hover:shadow-[0_12px_28px_var(--brand-glow)]";
 
+function winDateLabel(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function MomentumMetric({
   icon,
   value,
@@ -73,10 +85,17 @@ function MomentumMetric({
 
 export default function Dashboard() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
+  const [wins, setWins] = useState<PrivateWin[] | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get<TeamMember[]>("/api/team-members").then(setMembers);
+    Promise.all([
+      api.get<TeamMember[]>("/api/team-members"),
+      api.get<PrivateWin[]>("/api/check-ins/wins"),
+    ]).then(([nextMembers, nextWins]) => {
+      setMembers(nextMembers);
+      setWins(nextWins);
+    });
   }, []);
 
   async function startCheckIn(member: TeamMember) {
@@ -91,7 +110,7 @@ export default function Dashboard() {
     navigate(`/check-ins/${checkIn.id}`);
   }
 
-  if (!members) return <PageLoading />;
+  if (!members || !wins) return <PageLoading />;
 
   const active = members.filter((m) => m.active && !m.deletedAt);
   const due = active
@@ -274,6 +293,91 @@ export default function Dashboard() {
           </div>
         </>
       )}
+
+      <section className="mb-10" aria-labelledby="private-wins-title">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="mb-1.5 flex items-center gap-2">
+              <h2
+                id="private-wins-title"
+                className="text-xs font-bold tracking-[0.12em] text-foreground uppercase"
+              >
+                Wall of private wins
+              </h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-overlay-subtle px-2 py-0.5 text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-inset ring-overlay-strong">
+                <LockKeyhole className="size-3" />
+                Kept inside Pulse
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              A quiet place to remember what’s going well.
+            </p>
+          </div>
+          {wins.length > 0 && (
+            <span className="text-xs font-medium text-muted-foreground">
+              {wins.length} {wins.length === 1 ? "moment" : "moments"} worth keeping
+            </span>
+          )}
+        </div>
+
+        {wins.length > 0 ? (
+          <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {wins.map((win, index) => (
+              <Card
+                key={win.id}
+                className="flex h-full flex-col overflow-hidden bg-card p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_32px_var(--brand-glow)]"
+              >
+                <div
+                  className="mb-3 flex size-9 items-center justify-center rounded-xl"
+                  style={{
+                    color: ENERGY_COLORS[index % ENERGY_COLORS.length],
+                    background: `color-mix(in srgb, ${ENERGY_COLORS[index % ENERGY_COLORS.length]} 12%, transparent)`,
+                  }}
+                >
+                  <Quote className="size-4" fill="currentColor" aria-hidden="true" />
+                </div>
+                <p className="flex-1 text-[0.93rem] leading-relaxed font-medium whitespace-pre-line text-foreground">
+                  {win.text}
+                </p>
+                <div className="mt-5 flex items-center gap-2.5 border-t border-black/8 pt-3.5 dark:border-white/10">
+                  <MemberAvatar
+                    id={win.teamMember.id}
+                    name={win.teamMember.name}
+                    avatarUrl={win.teamMember.avatarUrl}
+                    avatarSeed={win.teamMember.avatarSeed}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to={`/team/${win.teamMember.id}`}
+                      className="block truncate text-xs font-semibold text-foreground hover:underline"
+                    >
+                      {win.teamMember.name}
+                    </Link>
+                    <p className="text-[0.7rem] text-muted-foreground">
+                      {winDateLabel(win.date)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="flex flex-col items-center border-dashed bg-card/65 px-6 py-9 text-center">
+            <div
+              className="mb-3 flex size-11 items-center justify-center rounded-2xl shadow-sm"
+              style={{ background: ENERGY_COLORS[1], color: ENERGY_ON_COLOR }}
+            >
+              <Trophy className="size-5" />
+            </div>
+            <h3 className="text-sm font-semibold">Your wall is ready for its first win</h3>
+            <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Capture something worth remembering in “What went well?” and it will
+              appear here when you complete the check-in.
+            </p>
+          </Card>
+        )}
+      </section>
 
       {upcoming.length > 0 && (
         <>

@@ -1,17 +1,18 @@
 import type { CSSProperties } from "react";
 import { Check } from "lucide-react";
+import { ENERGY_COLORS } from "../lib/energyPalette";
 
 const CONFETTI = [
-  { x: "-64px", y: "-42px", r: "-38deg", color: "#818cf8", delay: "20ms" },
-  { x: "-42px", y: "-72px", r: "24deg", color: "#a78bfa", delay: "70ms" },
-  { x: "-8px", y: "-82px", r: "64deg", color: "#6366f1", delay: "0ms" },
-  { x: "34px", y: "-70px", r: "112deg", color: "#c4b5fd", delay: "90ms" },
-  { x: "67px", y: "-38px", r: "148deg", color: "#818cf8", delay: "30ms" },
-  { x: "74px", y: "4px", r: "188deg", color: "#a78bfa", delay: "110ms" },
-  { x: "52px", y: "38px", r: "218deg", color: "#6366f1", delay: "50ms" },
-  { x: "14px", y: "56px", r: "260deg", color: "#c4b5fd", delay: "120ms" },
-  { x: "-34px", y: "48px", r: "302deg", color: "#818cf8", delay: "40ms" },
-  { x: "-70px", y: "20px", r: "344deg", color: "#a78bfa", delay: "100ms" },
+  { x: "-64px", y: "-42px", r: "-38deg", color: ENERGY_COLORS[0], delay: "20ms" },
+  { x: "-42px", y: "-72px", r: "24deg", color: ENERGY_COLORS[1], delay: "70ms" },
+  { x: "-8px", y: "-82px", r: "64deg", color: ENERGY_COLORS[2], delay: "0ms" },
+  { x: "34px", y: "-70px", r: "112deg", color: ENERGY_COLORS[3], delay: "90ms" },
+  { x: "67px", y: "-38px", r: "148deg", color: ENERGY_COLORS[4], delay: "30ms" },
+  { x: "74px", y: "4px", r: "188deg", color: ENERGY_COLORS[5], delay: "110ms" },
+  { x: "52px", y: "38px", r: "218deg", color: ENERGY_COLORS[0], delay: "50ms" },
+  { x: "14px", y: "56px", r: "260deg", color: ENERGY_COLORS[2], delay: "120ms" },
+  { x: "-34px", y: "48px", r: "302deg", color: ENERGY_COLORS[3], delay: "40ms" },
+  { x: "-70px", y: "20px", r: "344deg", color: ENERGY_COLORS[1], delay: "100ms" },
 ] as const;
 
 type ConfettiStyle = CSSProperties & {

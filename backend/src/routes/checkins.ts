@@ -206,6 +206,49 @@ router.get("/", asyncHandler(async (req, res) => {
   res.json(checkIns);
 }));
 
+// GET /api/check-ins/wins
+// A deliberately small projection for the private dashboard wall. Only
+// completed, non-deleted check-ins contribute, and no other check-in notes
+// are exposed by this endpoint.
+router.get("/wins", asyncHandler(async (_req, res) => {
+  const checkIns = await prisma.checkIn.findMany({
+    where: {
+      status: "COMPLETED",
+      deletedAt: null,
+      wins: { not: null },
+      teamMember: { deletedAt: null },
+    },
+    orderBy: [{ completedAt: "desc" }, { scheduledDate: "desc" }],
+    take: 24,
+    select: {
+      id: true,
+      wins: true,
+      completedAt: true,
+      scheduledDate: true,
+      teamMember: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          avatarSeed: true,
+        },
+      },
+    },
+  });
+
+  const wins = checkIns
+    .filter((checkIn) => checkIn.wins?.trim())
+    .slice(0, 12)
+    .map((checkIn) => ({
+      id: checkIn.id,
+      text: checkIn.wins!.trim(),
+      date: checkIn.completedAt ?? checkIn.scheduledDate,
+      teamMember: checkIn.teamMember,
+    }));
+
+  res.json(wins);
+}));
+
 // GET /api/check-ins/:id
 router.get("/:id", asyncHandler(async (req, res) => {
   const checkIn = await prisma.checkIn.findUnique({
