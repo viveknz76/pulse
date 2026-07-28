@@ -1,9 +1,9 @@
 export const ENERGY_LEVELS = [
-  { value: 1, emoji: "🌙", label: "Running low" },
-  { value: 2, emoji: "🌧️", label: "A little flat" },
-  { value: 3, emoji: "🌤️", label: "Steady" },
-  { value: 4, emoji: "☀️", label: "Feeling good" },
-  { value: 5, emoji: "⚡", label: "Full of energy" },
+  { value: 1, label: "Running low" },
+  { value: 2, label: "A little flat" },
+  { value: 3, label: "Steady" },
+  { value: 4, label: "Feeling good" },
+  { value: 5, label: "Full of energy" },
 ] as const;
 
 export function energyLevelLabel(value?: number | null): string | null {
