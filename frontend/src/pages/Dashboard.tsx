@@ -241,7 +241,12 @@ export default function Dashboard() {
             {due.map((m) => (
               <Card key={m.id} className={CARD_BASE}>
                 <div className="mb-4 flex items-center gap-3">
-                  <MemberAvatar id={m.id} name={m.name} />
+                  <MemberAvatar
+                    id={m.id}
+                    name={m.name}
+                    avatarUrl={m.avatarUrl}
+                    avatarSeed={m.avatarSeed}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[0.95rem] font-semibold">{m.name}</div>
                     {m.role && (
@@ -277,7 +282,12 @@ export default function Dashboard() {
             {upcoming.map((m) => (
               <Card key={m.id} className={CARD_BASE}>
                 <div className="mb-4 flex items-center gap-3">
-                  <MemberAvatar id={m.id} name={m.name} />
+                  <MemberAvatar
+                    id={m.id}
+                    name={m.name}
+                    avatarUrl={m.avatarUrl}
+                    avatarSeed={m.avatarSeed}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[0.95rem] font-semibold">{m.name}</div>
                     {m.role && (

@@ -1,7 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Camera, Check, Trash2 } from "lucide-react";
 import { api } from "../api/client";
 import { Cadence, TeamMember } from "../types";
+import { avatarChoiceSeeds } from "../lib/avatarIcons";
+import { MemberAvatar } from "./MemberAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +36,11 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+  const [selectedAvatarSeed, setSelectedAvatarSeed] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (member) {
@@ -43,8 +51,48 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
         cadence: member.cadence,
         notes: member.notes || "",
       });
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      setRemovePhoto(false);
+      setSelectedAvatarSeed(member.avatarSeed || null);
     }
   }, [member]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  function chooseAvatar(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Choose a JPG, PNG, or WebP image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Avatar must be smaller than 5 MB.");
+      return;
+    }
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setRemovePhoto(false);
+  }
+
+  function clearPhoto() {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setRemovePhoto(true);
+  }
+
+  function selectGeneratedAvatar(seed: string | null) {
+    clearPhoto();
+    setSelectedAvatarSeed(seed);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -57,7 +105,15 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
         email: form.email.trim(),
         cadence: form.cadence,
         notes: form.notes.trim(),
+        avatarSeed: selectedAvatarSeed,
       });
+      if (avatarFile) {
+        const body = new FormData();
+        body.append("avatar", avatarFile);
+        await api.upload(`/api/team-members/${member.id}/avatar`, body);
+      } else if (removePhoto && member.avatarUrl) {
+        await api.delete(`/api/team-members/${member.id}/avatar`);
+      }
       toast.success(`${form.name.trim()} updated`);
       onOpenChange(false);
       onSaved();
@@ -66,9 +122,13 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
     }
   }
 
+  const hasActivePhoto = Boolean(
+    avatarFile || (!removePhoto && member?.avatarUrl)
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit team member</DialogTitle>
@@ -76,6 +136,126 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            <div className="rounded-xl border border-border bg-muted/35 p-4">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label={`Choose a photo for ${form.name || "this team member"}`}
+                >
+                  <MemberAvatar
+                    id={member?.id || form.name}
+                    name={form.name || "?"}
+                    avatarUrl={avatarPreview || (removePhoto ? null : member?.avatarUrl)}
+                    avatarSeed={selectedAvatarSeed}
+                    size="lg"
+                    className="size-16 text-lg"
+                  />
+                  <span className="absolute right-0 bottom-0 flex size-6 items-center justify-center rounded-full border-2 border-card bg-foreground text-background shadow-sm transition-transform group-hover:scale-105">
+                    <Camera className="size-3" aria-hidden="true" />
+                  </span>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">Avatar</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Add a photo or choose an illustration.
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {avatarPreview || (!removePhoto && member?.avatarUrl)
+                        ? "Change photo"
+                        : "Add photo"}
+                    </Button>
+                    {(avatarPreview || (!removePhoto && member?.avatarUrl)) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={clearPhoto}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Remove photo
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={chooseAvatar}
+                />
+              </div>
+
+              <div className="mt-4 border-t border-border pt-3.5">
+                <p className="mb-2.5 text-xs font-semibold text-muted-foreground">
+                  Choose an illustration
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {member &&
+                    avatarChoiceSeeds(member.id).map((seed, index) => {
+                      const isSelected =
+                        !hasActivePhoto && selectedAvatarSeed === seed;
+                      return (
+                        <button
+                          key={seed}
+                          type="button"
+                          onClick={() => selectGeneratedAvatar(seed)}
+                          className="relative rounded-full outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                          aria-label={`Use illustration ${index + 1}`}
+                          aria-pressed={isSelected}
+                        >
+                          <MemberAvatar
+                            id={member.id}
+                            name={form.name || member.name}
+                            avatarSeed={seed}
+                            size="md"
+                            className={
+                              isSelected
+                                ? "ring-2 ring-foreground ring-offset-2"
+                                : "ring-black/10"
+                            }
+                          />
+                          {isSelected && (
+                            <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-foreground text-background ring-2 ring-card">
+                              <Check className="size-2.5" aria-hidden="true" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  <button
+                    type="button"
+                    onClick={() => selectGeneratedAvatar(null)}
+                    className="relative rounded-full outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    aria-label="Use initials"
+                    aria-pressed={
+                      !hasActivePhoto && selectedAvatarSeed === null
+                    }
+                  >
+                    <MemberAvatar
+                      id={member?.id || form.name}
+                      name={form.name || "?"}
+                      size="md"
+                      className={
+                        !hasActivePhoto && selectedAvatarSeed === null
+                          ? "ring-2 ring-foreground ring-offset-2"
+                          : "ring-black/10"
+                      }
+                    />
+                    <span className="sr-only">Initials</span>
+                  </button>
+                </div>
+              </div>
+            </div>
             <div>
               <label className={FIELD_LABEL}>Name</label>
               <Input

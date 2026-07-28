@@ -1,9 +1,12 @@
 import { Router } from "express";
+import { unlink } from "fs/promises";
+import path from "path";
 import { z } from "zod";
 import { prisma } from "../db";
 import { nextDueDate } from "../utils/cadence";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { AuthedRequest } from "../middleware/auth";
+import { avatarUpload, avatarUploadDir } from "../middleware/avatarUpload";
 
 const router = Router();
 
@@ -20,6 +23,7 @@ const createSchema = z.object({
 
 const updateSchema = createSchema.partial().extend({
   active: z.boolean().optional(),
+  avatarSeed: z.string().max(120).nullable().optional(),
 });
 
 // GET /api/team-members  — list all, each with computed "next due" date.
@@ -145,6 +149,58 @@ router.patch("/:id", asyncHandler(async (req, res) => {
       ...(startDate ? { startDate: new Date(startDate) } : {}),
     },
   });
+  res.json(member);
+}));
+
+async function removeAvatarFile(avatarUrl: string | null) {
+  if (!avatarUrl?.startsWith("/uploads/")) return;
+  const filename = path.basename(avatarUrl);
+  await unlink(path.join(avatarUploadDir, filename)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+  });
+}
+
+// POST /api/team-members/:id/avatar
+router.post(
+  "/:id/avatar",
+  avatarUpload.single("avatar"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "Choose an image to upload." });
+
+    const existing = await prisma.teamMember.findUnique({
+      where: { id: req.params.id },
+      select: { avatarUrl: true, deletedAt: true },
+    });
+    if (!existing || existing.deletedAt) {
+      await removeAvatarFile(`/uploads/${req.file.filename}`);
+      return res.status(404).json({ error: "Team member not found" });
+    }
+
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const member = await prisma.teamMember.update({
+      where: { id: req.params.id },
+      data: { avatarUrl },
+    });
+    await removeAvatarFile(existing.avatarUrl);
+    res.json(member);
+  })
+);
+
+// DELETE /api/team-members/:id/avatar
+router.delete("/:id/avatar", asyncHandler(async (req, res) => {
+  const existing = await prisma.teamMember.findUnique({
+    where: { id: req.params.id },
+    select: { avatarUrl: true, deletedAt: true },
+  });
+  if (!existing || existing.deletedAt) {
+    return res.status(404).json({ error: "Team member not found" });
+  }
+
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.id },
+    data: { avatarUrl: null },
+  });
+  await removeAvatarFile(existing.avatarUrl);
   res.json(member);
 }));
 

@@ -145,7 +145,13 @@ export default function TeamMembers() {
                 <TableRow key={m.id} className={m.deletedAt ? "opacity-60" : undefined}>
                   <TableCell>
                     <div className="flex items-center gap-2.5">
-                      <MemberAvatar id={m.id} name={m.name} size="sm" />
+                      <MemberAvatar
+                        id={m.id}
+                        name={m.name}
+                        avatarUrl={m.avatarUrl}
+                        avatarSeed={m.avatarSeed}
+                        size="sm"
+                      />
                       <div>
                         {m.deletedAt ? (
                           <span className="text-[0.9rem] font-semibold text-foreground">{m.name}</span>

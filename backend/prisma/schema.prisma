@@ -30,6 +30,8 @@ model TeamMember {
   name        String
   role        String?
   email       String?
+  avatarUrl   String?
+  avatarSeed  String?
   cadence     Cadence      @default(FORTNIGHTLY)
   active      Boolean      @default(true)
   startDate   DateTime     @default(now())

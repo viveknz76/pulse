@@ -199,7 +199,13 @@ export default function TeamMemberDetail() {
       </Link>
       <div className="mt-1.5 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <MemberAvatar id={member.id} name={member.name} size="lg" />
+          <MemberAvatar
+            id={member.id}
+            name={member.name}
+            avatarUrl={member.avatarUrl}
+            avatarSeed={member.avatarSeed}
+            size="lg"
+          />
           <div>
             <PageTitle size="sm">{member.name}</PageTitle>
             {member.role && (

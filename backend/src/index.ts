@@ -11,6 +11,7 @@ import talkingPointRoutes from "./routes/talkingPoints";
 import reviewRoutes from "./routes/review";
 import { requireAuth } from "./middleware/auth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { avatarUploadDir } from "./middleware/avatarUpload";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/api/auth", authRoutes);
+app.use("/uploads", requireAuth, express.static(avatarUploadDir));
 
 // Everything below requires an authenticated session.
 app.use("/api/team-members", requireAuth, teamMemberRoutes);

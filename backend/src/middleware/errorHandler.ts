@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
+import multer from "multer";
+import { AvatarUploadError } from "./avatarUpload";
 
 export function notFoundHandler(req: Request, res: Response) {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
@@ -24,6 +26,18 @@ export function errorHandler(
       case "P2025":
         return res.status(404).json({ error: "Record not found" });
     }
+  }
+
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Avatar must be smaller than 5 MB."
+        : "Unable to upload that avatar.";
+    return res.status(400).json({ error: message });
+  }
+
+  if (err instanceof AvatarUploadError) {
+    return res.status(400).json({ error: err.message });
   }
 
   console.error("Unhandled API error", err);

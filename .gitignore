@@ -6,3 +6,4 @@ build/
 .claude/
 *.tsbuildinfo
 *.timestamp-*.mjs
+backend/uploads/

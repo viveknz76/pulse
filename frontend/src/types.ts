@@ -7,6 +7,8 @@ export interface TeamMember {
   name: string;
   role?: string | null;
   email?: string | null;
+  avatarUrl?: string | null;
+  avatarSeed?: string | null;
   cadence: Cadence;
   active: boolean;
   startDate: string;
