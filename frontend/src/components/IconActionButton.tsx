@@ -3,9 +3,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 const VARIANT_CLASSES = {
-  default: "text-muted-foreground hover:text-foreground hover:bg-white/5",
-  primary: "text-primary hover:bg-white/5",
+  default: "text-muted-foreground hover:text-foreground hover:bg-overlay-subtle",
+  primary: "text-primary hover:bg-overlay-subtle",
   danger: "text-destructive hover:bg-destructive/10",
+  success: "text-[var(--success-text)] hover:bg-[var(--success-tint)]",
 };
 
 interface IconActionButtonProps {

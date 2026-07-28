@@ -28,7 +28,7 @@ function greetingWord(): string {
 }
 
 const CARD_BASE =
-  "rounded-xl border border-border bg-card p-5 transition-colors duration-150 hover:bg-white/[0.03]";
+  "rounded-xl border border-border bg-card p-5 transition-colors duration-150 hover:bg-overlay-subtle";
 const CARD_SHADOW = "";
 
 export default function Dashboard() {

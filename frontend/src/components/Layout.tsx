@@ -1,6 +1,9 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { MemberAvatar } from "./MemberAvatar";
+import { IconActionButton } from "./IconActionButton";
 import { cn } from "@/lib/utils";
 
 function DashboardIcon() {
@@ -52,8 +55,8 @@ function NavItem({
       className={cn(
         "flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors",
         active
-          ? "bg-white/10 text-foreground"
-          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+          ? "bg-overlay-strong text-foreground"
+          : "text-muted-foreground hover:bg-overlay-subtle hover:text-foreground"
       )}
     >
       {children}
@@ -63,6 +66,7 @@ function NavItem({
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
 
   const isTeamActive = pathname.startsWith("/team") || pathname.startsWith("/check-ins");
@@ -100,9 +104,14 @@ export default function Layout() {
               Sign out
             </button>
           </div>
+          <IconActionButton
+            label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            icon={theme === "dark" ? <Sun /> : <Moon />}
+            onClick={toggleTheme}
+          />
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto rounded-lg bg-panel p-10 ring-1 ring-white/10">
+      <main className="flex-1 overflow-y-auto rounded-lg bg-panel p-10 ring-1 ring-overlay-strong">
         <Outlet />
       </main>
     </div>

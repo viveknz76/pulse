@@ -22,7 +22,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       className={cn(
-        "border-b border-border transition-colors hover:bg-white/[0.03]",
+        "border-b border-border transition-colors hover:bg-overlay-subtle",
         className
       )}
       {...props}

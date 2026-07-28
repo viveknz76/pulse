@@ -162,7 +162,7 @@ export default function TeamMemberDetail() {
                     label="Save"
                     icon={<Check />}
                     type="submit"
-                    variant="primary"
+                    variant="success"
                     disabled={savingPoint || !editingPointContent.trim()}
                   />
                   <IconActionButton label="Cancel" icon={<X />} onClick={cancelEditPoint} />

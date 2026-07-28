@@ -134,7 +134,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !form.name.trim()}>
+            <Button type="submit" variant="success" disabled={saving || !form.name.trim()}>
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </DialogFooter>

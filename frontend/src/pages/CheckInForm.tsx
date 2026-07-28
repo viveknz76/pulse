@@ -281,7 +281,7 @@ export default function CheckInForm() {
       </div>
 
       <div className="mt-8 flex items-center gap-3">
-        <Button size="lg" onClick={handleComplete} disabled={saving || savingDraft}>
+        <Button size="lg" variant="success" onClick={handleComplete} disabled={saving || savingDraft}>
           {saving ? "Completing…" : "Complete check-in"}
         </Button>
         <Button
