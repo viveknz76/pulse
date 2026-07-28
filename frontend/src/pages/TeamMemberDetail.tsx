@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+import { Check, Copy, Pencil, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
-import { TeamMember } from "../types";
+import { CheckIn, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 
 function timeAgo(dateStr: string): string {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
@@ -118,6 +120,21 @@ export default function TeamMemberDetail() {
     } finally {
       setSavingPoint(false);
     }
+  }
+
+  async function copyCheckInSummary(c: CheckIn) {
+    if (!member) return;
+    const summary = buildCheckInSummaryText({
+      teamMemberName: member.name,
+      date: new Date(c.completedAt || c.scheduledDate),
+      wins: c.wins,
+      challenges: c.challenges,
+      growthNotes: c.growthNotes,
+      talkingPoints: c.talkingPoints || [],
+      actionItems: c.actionItems,
+    });
+    await navigator.clipboard.writeText(summary);
+    toast.success("Summary copied to clipboard");
   }
 
   if (!member) return <PageLoading />;
@@ -264,15 +281,22 @@ export default function TeamMemberDetail() {
 
           return (
             <Card key={c.id}>
-              <CardHeader>
-                <CardTitle>
-                  {new Date(date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </CardTitle>
-                <CardDescription>{timeAgo(date)}</CardDescription>
+              <CardHeader className="flex-row items-start justify-between">
+                <div>
+                  <CardTitle>
+                    {new Date(date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </CardTitle>
+                  <CardDescription>{timeAgo(date)}</CardDescription>
+                </div>
+                <IconActionButton
+                  label="Copy summary"
+                  icon={<Copy />}
+                  onClick={() => copyCheckInSummary(c)}
+                />
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {hasNarrative && (

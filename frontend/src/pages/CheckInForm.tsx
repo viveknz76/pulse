@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Copy } from "lucide-react";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
@@ -13,7 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 
 interface DraftActionItem {
   id?: string; // set when this is an existing action item being carried over/edited
@@ -51,6 +60,8 @@ export default function CheckInForm() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [deletedActionItemIds, setDeletedActionItemIds] = useState<string[]>([]);
   const [deletedTalkingPointIds, setDeletedTalkingPointIds] = useState<string[]>([]);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryText, setSummaryText] = useState("");
 
   async function loadCheckIn() {
     if (!id) return;
@@ -137,6 +148,19 @@ export default function CheckInForm() {
     setPoints(points.filter((_, i) => i !== index));
   }
 
+  function buildSummaryText(): string {
+    if (!checkIn) return "";
+    return buildCheckInSummaryText({
+      teamMemberName: checkIn.teamMember?.name || "",
+      date: new Date(),
+      wins,
+      challenges,
+      growthNotes,
+      talkingPoints: points,
+      actionItems: items,
+    });
+  }
+
   function buildPayload() {
     return {
       wins,
@@ -176,10 +200,21 @@ export default function CheckInForm() {
     setSaving(true);
     try {
       await api.post(`/api/check-ins/${checkIn.id}/complete`, buildPayload());
-      navigate(`/team/${checkIn.teamMemberId}`);
+      setSummaryText(buildSummaryText());
+      setSummaryOpen(true);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleSummaryClose() {
+    setSummaryOpen(false);
+    if (checkIn) navigate(`/team/${checkIn.teamMemberId}`);
+  }
+
+  async function handleCopySummary() {
+    await navigator.clipboard.writeText(summaryText);
+    toast.success("Summary copied to clipboard");
   }
 
   if (!checkIn) return <PageLoading />;
@@ -312,6 +347,33 @@ export default function CheckInForm() {
           </span>
         )}
       </div>
+
+      <Dialog open={summaryOpen} onOpenChange={(open) => !open && handleSummaryClose()}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Check-in complete</DialogTitle>
+            <DialogDescription>
+              Copy this summary to share with {checkIn.teamMember?.name} over email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <pre className="max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-overlay-subtle p-4 pr-12 font-sans text-sm">
+              {summaryText}
+            </pre>
+            <IconActionButton
+              label="Copy summary"
+              icon={<Copy />}
+              onClick={handleCopySummary}
+              className="absolute top-2 right-2 bg-card"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleSummaryClose}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
