@@ -79,7 +79,10 @@ router.get("/:id", asyncHandler(async (req, res) => {
       checkIns: {
         where: { deletedAt: null },
         orderBy: { scheduledDate: "desc" },
-        include: { actionItems: { where: { deletedAt: null } } },
+        include: {
+          actionItems: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+          talkingPoints: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+        },
       },
       actionItems: {
         where: { carriedOverTo: { is: null }, deletedAt: null },

@@ -11,7 +11,36 @@ import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+function timeAgo(dateStr: string): string {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  }
+  if (days < 365) {
+    const months = Math.floor(days / 30);
+    return `${months} month${months > 1 ? "s" : ""} ago`;
+  }
+  const years = Math.floor(days / 365);
+  return `${years} year${years > 1 ? "s" : ""} ago`;
+}
+
+function HistoryField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        {label}
+      </div>
+      <p className="text-[0.92rem] leading-relaxed whitespace-pre-line">{children}</p>
+    </div>
+  );
+}
 
 export default function TeamMemberDetail() {
   const { id } = useParams<{ id: string }>();
@@ -126,7 +155,7 @@ export default function TeamMemberDetail() {
       </div>
 
       {member.notes && (
-        <Card className="mb-8 p-4 text-sm leading-relaxed text-muted-foreground">
+        <Card className="mb-8 p-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
           {member.notes}
         </Card>
       )}
@@ -227,35 +256,88 @@ export default function TeamMemberDetail() {
         <p className="text-sm text-muted-foreground">No completed check-ins yet.</p>
       )}
       <div className="flex flex-col gap-4">
-        {completedCheckIns.map((c) => (
-          <Card key={c.id}>
-            <CardHeader>
-              <CardTitle>{new Date(c.completedAt || c.scheduledDate).toLocaleDateString()}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1.5 text-[0.92rem] leading-relaxed">
-              {c.wins && (
-                <p>
-                  <strong>Wins</strong> — {c.wins}
-                </p>
-              )}
-              {c.challenges && (
-                <p>
-                  <strong>Challenges</strong> — {c.challenges}
-                </p>
-              )}
-              {c.growthNotes && (
-                <p>
-                  <strong>Growth</strong> — {c.growthNotes}
-                </p>
-              )}
-              {c.actionItems.length > 0 && (
-                <p>
-                  <strong>Actions</strong> — {c.actionItems.map((a) => a.description).join("; ")}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        {completedCheckIns.map((c) => {
+          const date = c.completedAt || c.scheduledDate;
+          const talkingPoints = c.talkingPoints || [];
+          const hasNarrative = !!(c.wins || c.challenges || c.growthNotes);
+          const hasStructured = talkingPoints.length > 0 || c.actionItems.length > 0;
+
+          return (
+            <Card key={c.id}>
+              <CardHeader>
+                <CardTitle>
+                  {new Date(date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </CardTitle>
+                <CardDescription>{timeAgo(date)}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                {hasNarrative && (
+                  <div className="flex flex-col gap-3">
+                    {c.wins && <HistoryField label="Wins">{c.wins}</HistoryField>}
+                    {c.challenges && <HistoryField label="Challenges">{c.challenges}</HistoryField>}
+                    {c.growthNotes && <HistoryField label="Growth">{c.growthNotes}</HistoryField>}
+                  </div>
+                )}
+
+                {hasStructured && (
+                  <div
+                    className={cn(
+                      "flex flex-col gap-4",
+                      hasNarrative && "border-t border-border pt-4"
+                    )}
+                  >
+                    {talkingPoints.length > 0 && (
+                      <div>
+                        <div className="mb-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                          Talking points ({talkingPoints.length})
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {talkingPoints.map((t) => (
+                            <div key={t.id} className="flex items-center gap-2 text-[0.92rem]">
+                              <StatusDot status={t.resolved ? "DONE" : "OPEN"} />
+                              <span className={cn("flex-1", !t.resolved && "text-muted-foreground")}>
+                                {t.content}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {c.actionItems.length > 0 && (
+                      <div>
+                        <div className="mb-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                          Action items ({c.actionItems.length})
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {c.actionItems.map((a) => (
+                            <div key={a.id} className="flex items-center gap-2 text-[0.92rem]">
+                              <StatusDot status={a.status} />
+                              <span className="flex-1">{a.description}</span>
+                              {a.dueDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  due {new Date(a.dueDate).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!hasNarrative && !hasStructured && (
+                  <p className="text-sm text-muted-foreground">No notes recorded for this check-in.</p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <EditMemberDialog
