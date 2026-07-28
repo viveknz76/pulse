@@ -54,6 +54,7 @@ export default function CheckInForm() {
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [wins, setWins] = useState("");
   const [challenges, setChallenges] = useState("");
+  const [decisions, setDecisions] = useState("");
   const [growthNotes, setGrowthNotes] = useState("");
   const [energyLevel, setEnergyLevel] = useState<number | null>(null);
   const [items, setItems] = useState<DraftActionItem[]>([]);
@@ -94,6 +95,7 @@ export default function CheckInForm() {
     setCheckIn(ci);
     setWins(ci.wins || "");
     setChallenges(ci.challenges || "");
+    setDecisions(ci.decisions || "");
     setGrowthNotes(ci.growthNotes || "");
     setEnergyLevel(ci.energyLevel ?? null);
     setItems(
@@ -178,6 +180,7 @@ export default function CheckInForm() {
       date: new Date(),
       wins,
       challenges,
+      decisions,
       growthNotes,
       energyLevel,
       talkingPoints: points,
@@ -189,6 +192,7 @@ export default function CheckInForm() {
     return {
       wins,
       challenges,
+      decisions,
       growthNotes,
       energyLevel,
       actionItems: items
@@ -319,6 +323,17 @@ export default function CheckInForm() {
           value={challenges}
           onChange={(e) => setChallenges(e.target.value)}
           placeholder="What's been difficult or blocked?"
+        />
+      </div>
+
+      <div className="mb-6">
+        <label className={FIELD_LABEL}>Decisions</label>
+        <p className={FIELD_HINT}>Choices, agreements, or direction you want to remember.</p>
+        <Textarea
+          rows={3}
+          value={decisions}
+          onChange={(e) => setDecisions(e.target.value)}
+          placeholder="What did you agree or decide together?"
         />
       </div>
 

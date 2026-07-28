@@ -24,6 +24,7 @@ interface BuildCheckInSummaryInput {
   date: Date;
   wins?: string | null;
   challenges?: string | null;
+  decisions?: string | null;
   growthNotes?: string | null;
   energyLevel?: number | null;
   talkingPoints: SummaryTalkingPoint[];
@@ -44,6 +45,7 @@ export function buildCheckInSummaryText({
   date,
   wins,
   challenges,
+  decisions,
   growthNotes,
   energyLevel,
   talkingPoints,
@@ -64,6 +66,10 @@ export function buildCheckInSummaryText({
 
   lines.push("Challenges");
   lines.push(challenges?.trim() || "—");
+  lines.push("");
+
+  lines.push("Decisions");
+  lines.push(decisions?.trim() || "—");
   lines.push("");
 
   lines.push("Growth");

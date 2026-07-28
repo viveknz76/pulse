@@ -59,6 +59,7 @@ model CheckIn {
 
   wins          String?
   challenges    String?
+  decisions     String?
   growthNotes   String?
   energyLevel   Int?
 

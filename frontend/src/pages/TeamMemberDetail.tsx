@@ -10,6 +10,7 @@ import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
 import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
+import { RelationshipTimeline } from "../components/RelationshipTimeline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,6 +146,7 @@ export default function TeamMemberDetail() {
       date: new Date(c.completedAt || c.scheduledDate),
       wins: c.wins,
       challenges: c.challenges,
+      decisions: c.decisions,
       growthNotes: c.growthNotes,
       energyLevel: c.energyLevel,
       talkingPoints: c.talkingPoints || [],
@@ -320,7 +322,13 @@ export default function TeamMemberDetail() {
         </ul>
       )}
 
-      <SectionLabel>Check-in history</SectionLabel>
+      <SectionLabel className="mb-2">Relationship timeline</SectionLabel>
+      <p className="mb-5 text-sm text-muted-foreground">
+        The moments shaping your work together—wins, decisions, growth, and commitments.
+      </p>
+      <RelationshipTimeline checkIns={completedCheckIns} />
+
+      <SectionLabel>Detailed check-in history</SectionLabel>
       {completedCheckIns.length === 0 && (
         <p className="text-sm text-muted-foreground">No completed check-ins yet.</p>
       )}
@@ -328,7 +336,13 @@ export default function TeamMemberDetail() {
         {completedCheckIns.map((c) => {
           const date = c.completedAt || c.scheduledDate;
           const talkingPoints = c.talkingPoints || [];
-          const hasNarrative = !!(c.energyLevel || c.wins || c.challenges || c.growthNotes);
+          const hasNarrative = !!(
+            c.energyLevel ||
+            c.wins ||
+            c.challenges ||
+            c.decisions ||
+            c.growthNotes
+          );
           const hasStructured = talkingPoints.length > 0 || c.actionItems.length > 0;
 
           return (
@@ -368,6 +382,7 @@ export default function TeamMemberDetail() {
                     )}
                     {c.wins && <HistoryField label="Wins">{c.wins}</HistoryField>}
                     {c.challenges && <HistoryField label="Challenges">{c.challenges}</HistoryField>}
+                    {c.decisions && <HistoryField label="Decisions">{c.decisions}</HistoryField>}
                     {c.growthNotes && <HistoryField label="Growth">{c.growthNotes}</HistoryField>}
                   </div>
                 )}

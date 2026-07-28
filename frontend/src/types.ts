@@ -31,6 +31,7 @@ export interface CheckIn {
   status: CheckInStatus;
   wins?: string | null;
   challenges?: string | null;
+  decisions?: string | null;
   growthNotes?: string | null;
   energyLevel?: number | null;
   actionItems: ActionItem[];
