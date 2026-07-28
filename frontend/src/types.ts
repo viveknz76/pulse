@@ -14,6 +14,8 @@ export interface TeamMember {
   nextDueDate: string;
   lastCompletedAt?: string | null;
   activeCheckInId?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
   checkIns?: CheckIn[];
   actionItems?: ActionItem[];
   talkingPoints?: TalkingPoint[];

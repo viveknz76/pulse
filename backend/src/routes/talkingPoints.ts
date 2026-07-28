@@ -20,6 +20,8 @@ router.get("/", asyncHandler(async (req, res) => {
   const { teamMemberId, resolved } = req.query as { teamMemberId?: string; resolved?: string };
   const points = await prisma.talkingPoint.findMany({
     where: {
+      deletedAt: null,
+      teamMember: { deletedAt: null },
       ...(teamMemberId ? { teamMemberId } : {}),
       ...(resolved !== undefined ? { resolved: resolved === "true" } : {}),
     },
@@ -58,10 +60,13 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   }
 }));
 
-// DELETE /api/talking-points/:id
+// DELETE /api/talking-points/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
   try {
-    await prisma.talkingPoint.delete({ where: { id: req.params.id } });
+    await prisma.talkingPoint.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date() },
+    });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Talking point not found" });

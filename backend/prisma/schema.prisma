@@ -36,10 +36,14 @@ model TeamMember {
   notes       String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  deletedBy   String?
 
   checkIns      CheckIn[]
   actionItems   ActionItem[]
   talkingPoints TalkingPoint[]
+
+  @@index([deletedAt])
 }
 
 model CheckIn {
@@ -57,11 +61,13 @@ model CheckIn {
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
 
   actionItems   ActionItem[]
   talkingPoints TalkingPoint[]
 
   @@index([teamMemberId, scheduledDate])
+  @@index([deletedAt])
 }
 
 model ActionItem {
@@ -83,9 +89,11 @@ model ActionItem {
 
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
 
   @@index([teamMemberId, status])
   @@index([dueDate])
+  @@index([deletedAt])
 }
 
 model TalkingPoint {
@@ -102,6 +110,8 @@ model TalkingPoint {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@index([teamMemberId, resolved])
+  @@index([deletedAt])
 }

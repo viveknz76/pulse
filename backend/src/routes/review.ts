@@ -9,9 +9,12 @@ const router = Router();
 router.get("/", asyncHandler(async (_req, res) => {
   const { start, end } = currentWeekRange();
 
+  const notDeleted = { deletedAt: null, teamMember: { deletedAt: null } } as const;
+
   const [overdue, dueThisWeek, upcoming, noDueDate, recentlyCompleted] = await Promise.all([
     prisma.actionItem.findMany({
       where: {
+        ...notDeleted,
         status: { not: "DONE" },
         dueDate: { lt: start },
         carriedOverTo: { is: null },
@@ -21,6 +24,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     }),
     prisma.actionItem.findMany({
       where: {
+        ...notDeleted,
         status: { not: "DONE" },
         dueDate: { gte: start, lte: end },
         carriedOverTo: { is: null },
@@ -30,6 +34,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     }),
     prisma.actionItem.findMany({
       where: {
+        ...notDeleted,
         status: { not: "DONE" },
         dueDate: { gt: end },
         carriedOverTo: { is: null },
@@ -39,6 +44,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     }),
     prisma.actionItem.findMany({
       where: {
+        ...notDeleted,
         status: { not: "DONE" },
         dueDate: null,
         carriedOverTo: { is: null },
@@ -48,6 +54,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     }),
     prisma.actionItem.findMany({
       where: {
+        ...notDeleted,
         status: "DONE",
         completedAt: { gte: start, lte: end },
         carriedOverTo: { is: null },
@@ -59,9 +66,13 @@ router.get("/", asyncHandler(async (_req, res) => {
 
   // Team members whose next check-in is due this week.
   const members = await prisma.teamMember.findMany({
-    where: { active: true },
+    where: { active: true, deletedAt: null },
     include: {
-      checkIns: { where: { status: "COMPLETED" }, orderBy: { scheduledDate: "desc" }, take: 1 },
+      checkIns: {
+        where: { status: "COMPLETED", deletedAt: null },
+        orderBy: { scheduledDate: "desc" },
+        take: 1,
+      },
     },
   });
 

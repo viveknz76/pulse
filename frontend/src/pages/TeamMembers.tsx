@@ -141,17 +141,21 @@ export default function TeamMembers() {
             </TableHeader>
             <TableBody>
               {members.map((m) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id} className={m.deletedAt ? "opacity-60" : undefined}>
                   <TableCell>
                     <div className="flex items-center gap-2.5">
                       <MemberAvatar id={m.id} name={m.name} size="sm" />
                       <div>
-                        <Link
-                          to={`/team/${m.id}`}
-                          className="text-[0.9rem] font-semibold text-foreground transition-colors hover:text-primary"
-                        >
-                          {m.name}
-                        </Link>
+                        {m.deletedAt ? (
+                          <span className="text-[0.9rem] font-semibold text-foreground">{m.name}</span>
+                        ) : (
+                          <Link
+                            to={`/team/${m.id}`}
+                            className="text-[0.9rem] font-semibold text-foreground transition-colors hover:text-primary"
+                          >
+                            {m.name}
+                          </Link>
+                        )}
                         <div className="text-[0.78rem] text-[var(--muted-foreground-2)]">
                           {m.role || "—"}
                         </div>
@@ -161,30 +165,38 @@ export default function TeamMembers() {
                   <TableCell>{CADENCE_LABELS[m.cadence]}</TableCell>
                   <TableCell>{new Date(m.nextDueDate).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant={m.active ? "success" : "secondary"}>
-                      {m.active ? "Active" : "Inactive"}
+                    <Badge variant={m.deletedAt ? "destructive" : m.active ? "success" : "secondary"}>
+                      {m.deletedAt ? "Deleted" : m.active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <IconActionButton
-                        label="Edit"
-                        icon={<Pencil />}
-                        onClick={() => setEditingMember(m)}
-                      />
-                      <IconActionButton
-                        label={m.active ? "Deactivate" : "Reactivate"}
-                        icon={m.active ? <UserMinus /> : <UserCheck />}
-                        variant="primary"
-                        onClick={() => toggleActive(m)}
-                      />
-                      <IconActionButton
-                        label="Delete"
-                        icon={<Trash2 />}
-                        variant="danger"
-                        onClick={() => setPendingDelete(m)}
-                      />
-                    </div>
+                    {m.deletedAt ? (
+                      <div className="text-right text-[0.78rem] text-muted-foreground">
+                        {m.deletedBy && <>by {m.deletedBy}</>}
+                        {m.deletedBy && " · "}
+                        {new Date(m.deletedAt).toLocaleDateString()}
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-1">
+                        <IconActionButton
+                          label="Edit"
+                          icon={<Pencil />}
+                          onClick={() => setEditingMember(m)}
+                        />
+                        <IconActionButton
+                          label={m.active ? "Deactivate" : "Reactivate"}
+                          icon={m.active ? <UserMinus /> : <UserCheck />}
+                          variant="primary"
+                          onClick={() => toggleActive(m)}
+                        />
+                        <IconActionButton
+                          label="Delete"
+                          icon={<Trash2 />}
+                          variant="danger"
+                          onClick={() => setPendingDelete(m)}
+                        />
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -198,7 +210,8 @@ export default function TeamMembers() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {pendingDelete?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes {pendingDelete?.name} and all their check-in history. This can't be undone.
+              This hides {pendingDelete?.name} from your active team, dashboard, and review. Their
+              check-in history is kept and they'll still show (marked "Deleted") in this table.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

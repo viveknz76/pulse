@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   if (!members) return <PageLoading />;
 
-  const active = members.filter((m) => m.active);
+  const active = members.filter((m) => m.active && !m.deletedAt);
   const due = active
     .filter((m) => daysUntil(m.nextDueDate) <= 3)
     .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { nextDueDate } from "../utils/cadence";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { AuthedRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -21,20 +22,23 @@ const updateSchema = createSchema.partial().extend({
   active: z.boolean().optional(),
 });
 
-// GET /api/team-members  — list all, each with computed "next due" date
+// GET /api/team-members  — list all, each with computed "next due" date.
+// Includes soft-deleted members (the Team page shows them with a "Deleted"
+// status for an audit trail) — consumers that only want active people
+// (Dashboard, Review) filter deletedAt/active out themselves.
 router.get("/", asyncHandler(async (_req, res) => {
   const [members, activeCheckIns] = await Promise.all([
     prisma.teamMember.findMany({
       orderBy: { name: "asc" },
       include: {
         checkIns: {
-          where: { status: "COMPLETED" },
+          where: { status: "COMPLETED", deletedAt: null },
           orderBy: { scheduledDate: "desc" },
           take: 1,
         },
         _count: {
           select: {
-            actionItems: true,
+            actionItems: { where: { deletedAt: null } },
           },
         },
       },
@@ -42,7 +46,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     // A person can only have one in-progress (SCHEDULED) check-in at a time,
     // so the UI can offer "Resume" instead of starting a duplicate.
     prisma.checkIn.findMany({
-      where: { status: "SCHEDULED" },
+      where: { status: "SCHEDULED", deletedAt: null },
       select: { id: true, teamMemberId: true },
     }),
   ]);
@@ -73,17 +77,18 @@ router.get("/:id", asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     include: {
       checkIns: {
+        where: { deletedAt: null },
         orderBy: { scheduledDate: "desc" },
-        include: { actionItems: true },
+        include: { actionItems: { where: { deletedAt: null } } },
       },
       actionItems: {
-        where: { carriedOverTo: { is: null } },
+        where: { carriedOverTo: { is: null }, deletedAt: null },
         orderBy: { createdAt: "desc" },
       },
-      talkingPoints: { orderBy: { createdAt: "asc" } },
+      talkingPoints: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });
-  if (!member) return res.status(404).json({ error: "Team member not found" });
+  if (!member || member.deletedAt) return res.status(404).json({ error: "Team member not found" });
 
   const lastCompleted = member.checkIns.find(
     (c: (typeof member.checkIns)[number]) => c.status === "COMPLETED"
@@ -134,11 +139,17 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   }
 }));
 
-// DELETE /api/team-members/:id
-router.delete("/:id", asyncHandler(async (req, res) => {
+// DELETE /api/team-members/:id  — soft delete: hides the member from active
+// views (and, via deletedAt filters elsewhere, their check-ins/action
+// items/talking points) without erasing any history from the database.
+// Records who deleted it for the audit trail shown in the Team table.
+router.delete("/:id", asyncHandler(async (req: AuthedRequest, res) => {
   try {
-    await prisma.teamMember.delete({ where: { id: req.params.id } });
-    res.status(204).send();
+    const member = await prisma.teamMember.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date(), deletedBy: req.user?.email ?? null },
+    });
+    res.json(member);
   } catch {
     res.status(404).json({ error: "Team member not found" });
   }

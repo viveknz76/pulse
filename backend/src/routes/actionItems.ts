@@ -17,6 +17,8 @@ router.get("/", asyncHandler(async (req, res) => {
   const items = await prisma.actionItem.findMany({
     where: {
       carriedOverTo: { is: null },
+      deletedAt: null,
+      teamMember: { deletedAt: null },
       ...(status ? { status: status as any } : {}),
       ...(teamMemberId ? { teamMemberId } : {}),
     },
@@ -55,7 +57,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
  */
 router.post("/:id/carry-over", asyncHandler(async (req, res) => {
   const original = await prisma.actionItem.findUnique({ where: { id: req.params.id } });
-  if (!original) return res.status(404).json({ error: "Action item not found" });
+  if (!original || original.deletedAt) return res.status(404).json({ error: "Action item not found" });
 
   const created = await prisma.actionItem.create({
     data: {
@@ -70,10 +72,13 @@ router.post("/:id/carry-over", asyncHandler(async (req, res) => {
   res.status(201).json(created);
 }));
 
-// DELETE /api/action-items/:id
+// DELETE /api/action-items/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
   try {
-    await prisma.actionItem.delete({ where: { id: req.params.id } });
+    await prisma.actionItem.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date() },
+    });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Action item not found" });

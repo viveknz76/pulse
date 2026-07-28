@@ -58,7 +58,7 @@ async function applyCheckInUpdate(
           include: { carriedOverTo: true },
         });
 
-        if (!existing || existing.teamMemberId !== checkIn.teamMemberId) {
+        if (!existing || existing.teamMemberId !== checkIn.teamMemberId || existing.deletedAt) {
           throw new Error(`Action item ${item.id} does not belong to this team member`);
         }
 
@@ -114,7 +114,7 @@ async function applyCheckInUpdate(
     for (const point of talkingPoints) {
       if (point.id) {
         const existing = await tx.talkingPoint.findUnique({ where: { id: point.id } });
-        if (!existing || existing.teamMemberId !== checkIn.teamMemberId) {
+        if (!existing || existing.teamMemberId !== checkIn.teamMemberId || existing.deletedAt) {
           throw new Error(`Talking point ${point.id} does not belong to this team member`);
         }
 
@@ -153,7 +153,11 @@ async function applyCheckInUpdate(
 router.get("/", asyncHandler(async (req, res) => {
   const teamMemberId = req.query.teamMemberId as string | undefined;
   const checkIns = await prisma.checkIn.findMany({
-    where: teamMemberId ? { teamMemberId } : undefined,
+    where: {
+      deletedAt: null,
+      teamMember: { deletedAt: null },
+      ...(teamMemberId ? { teamMemberId } : {}),
+    },
     orderBy: { scheduledDate: "desc" },
     include: { actionItems: true, teamMember: true },
   });
@@ -166,7 +170,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     include: { actionItems: true, talkingPoints: true, teamMember: true },
   });
-  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+  if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
   res.json(checkIn);
 }));
 
@@ -178,7 +182,7 @@ router.post("/", asyncHandler(async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const existing = await prisma.checkIn.findFirst({
-    where: { teamMemberId: parsed.data.teamMemberId, status: "SCHEDULED" },
+    where: { teamMemberId: parsed.data.teamMemberId, status: "SCHEDULED", deletedAt: null },
     orderBy: { scheduledDate: "desc" },
   });
   if (existing) return res.status(200).json(existing);
@@ -201,7 +205,7 @@ router.post("/:id/save", asyncHandler(async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
-  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+  if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
   if (checkIn.status === "COMPLETED") {
     return res.status(400).json({ error: "This check-in is already completed" });
   }
@@ -218,16 +222,19 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
-  if (!checkIn) return res.status(404).json({ error: "Check-in not found" });
+  if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
 
   const result = await applyCheckInUpdate(checkIn, parsed.data, { complete: true });
   res.json(result);
 }));
 
-// DELETE /api/check-ins/:id
+// DELETE /api/check-ins/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
   try {
-    await prisma.checkIn.delete({ where: { id: req.params.id } });
+    await prisma.checkIn.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date() },
+    });
     res.status(204).send();
   } catch {
     res.status(404).json({ error: "Check-in not found" });
