@@ -35,19 +35,15 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const { dueDate, ...rest } = parsed.data;
-  try {
-    const item = await prisma.actionItem.update({
-      where: { id: req.params.id },
-      data: {
-        ...rest,
-        ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
-        ...(rest.status === "DONE" ? { completedAt: new Date() } : {}),
-      },
-    });
-    res.json(item);
-  } catch {
-    res.status(404).json({ error: "Action item not found" });
-  }
+  const item = await prisma.actionItem.update({
+    where: { id: req.params.id },
+    data: {
+      ...rest,
+      ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+      ...(rest.status === "DONE" ? { completedAt: new Date() } : {}),
+    },
+  });
+  res.json(item);
 }));
 
 /**
@@ -75,15 +71,11 @@ router.post("/:id/carry-over", asyncHandler(async (req, res) => {
 
 // DELETE /api/action-items/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
-  try {
-    await prisma.actionItem.update({
-      where: { id: req.params.id },
-      data: { deletedAt: new Date() },
-    });
-    res.status(204).send();
-  } catch {
-    res.status(404).json({ error: "Action item not found" });
-  }
+  await prisma.actionItem.update({
+    where: { id: req.params.id },
+    data: { deletedAt: new Date() },
+  });
+  res.status(204).send();
 }));
 
 export default router;

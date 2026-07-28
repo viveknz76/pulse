@@ -45,33 +45,25 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  try {
-    const point = await prisma.talkingPoint.update({
-      where: { id: req.params.id },
-      data: {
-        ...parsed.data,
-        ...(parsed.data.resolved !== undefined
-          ? { resolvedAt: parsed.data.resolved ? new Date() : null }
-          : {}),
-      },
-    });
-    res.json(point);
-  } catch {
-    res.status(404).json({ error: "Talking point not found" });
-  }
+  const point = await prisma.talkingPoint.update({
+    where: { id: req.params.id },
+    data: {
+      ...parsed.data,
+      ...(parsed.data.resolved !== undefined
+        ? { resolvedAt: parsed.data.resolved ? new Date() : null }
+        : {}),
+    },
+  });
+  res.json(point);
 }));
 
 // DELETE /api/talking-points/:id  — soft delete.
 router.delete("/:id", asyncHandler(async (req, res) => {
-  try {
-    await prisma.talkingPoint.update({
-      where: { id: req.params.id },
-      data: { deletedAt: new Date() },
-    });
-    res.status(204).send();
-  } catch {
-    res.status(404).json({ error: "Talking point not found" });
-  }
+  await prisma.talkingPoint.update({
+    where: { id: req.params.id },
+    data: { deletedAt: new Date() },
+  });
+  res.status(204).send();
 }));
 
 export default router;

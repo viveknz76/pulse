@@ -137,19 +137,15 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   const { startDate, email, ...rest } = parsed.data;
-  try {
-    const member = await prisma.teamMember.update({
-      where: { id: req.params.id },
-      data: {
-        ...rest,
-        ...(email !== undefined ? { email: email || null } : {}),
-        ...(startDate ? { startDate: new Date(startDate) } : {}),
-      },
-    });
-    res.json(member);
-  } catch {
-    res.status(404).json({ error: "Team member not found" });
-  }
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.id },
+    data: {
+      ...rest,
+      ...(email !== undefined ? { email: email || null } : {}),
+      ...(startDate ? { startDate: new Date(startDate) } : {}),
+    },
+  });
+  res.json(member);
 }));
 
 // DELETE /api/team-members/:id  — soft delete: hides the member from active
@@ -157,15 +153,11 @@ router.patch("/:id", asyncHandler(async (req, res) => {
 // items/talking points) without erasing any history from the database.
 // Records who deleted it for the audit trail shown in the Team table.
 router.delete("/:id", asyncHandler(async (req: AuthedRequest, res) => {
-  try {
-    const member = await prisma.teamMember.update({
-      where: { id: req.params.id },
-      data: { deletedAt: new Date(), deletedBy: req.user?.email ?? null },
-    });
-    res.json(member);
-  } catch {
-    res.status(404).json({ error: "Team member not found" });
-  }
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.id },
+    data: { deletedAt: new Date(), deletedBy: req.user?.email ?? null },
+  });
+  res.json(member);
 }));
 
 export default router;
