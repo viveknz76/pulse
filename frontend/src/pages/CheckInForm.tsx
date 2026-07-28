@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Trash2, Copy } from "lucide-react";
@@ -63,26 +63,34 @@ export default function CheckInForm() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryText, setSummaryText] = useState("");
 
-  async function loadCheckIn() {
+  const loadCheckIn = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
     const ci = await api.get<CheckIn>(`/api/check-ins/${id}`);
-    setCheckIn(ci);
-    setWins(ci.wins || "");
-    setChallenges(ci.challenges || "");
-    setGrowthNotes(ci.growthNotes || "");
 
     // Pull in this person's still-open action items from prior check-ins so
     // they can be reviewed/updated/carried over as part of this one.
-    const openItems = await api.get<ActionItem[]>(
-      `/api/action-items?teamMemberId=${ci.teamMemberId}&status=OPEN`
-    );
-    const inProgressItems = await api.get<ActionItem[]>(
-      `/api/action-items?teamMemberId=${ci.teamMemberId}&status=IN_PROGRESS`
-    );
+    const [openItems, inProgressItems, openPoints] = await Promise.all([
+      api.get<ActionItem[]>(
+        `/api/action-items?teamMemberId=${ci.teamMemberId}&status=OPEN`
+      ),
+      api.get<ActionItem[]>(
+        `/api/action-items?teamMemberId=${ci.teamMemberId}&status=IN_PROGRESS`
+      ),
+      api.get<TalkingPoint[]>(
+        `/api/talking-points?teamMemberId=${ci.teamMemberId}&resolved=false`
+      ),
+    ]);
+
+    if (shouldIgnore()) return;
+
     const priorOpen = [...openItems, ...inProgressItems].filter((a) => a.checkInId !== ci.id);
     // Items already saved against this check-in from an earlier draft save.
     const alreadyHere = ci.actionItems || [];
 
+    setCheckIn(ci);
+    setWins(ci.wins || "");
+    setChallenges(ci.challenges || "");
+    setGrowthNotes(ci.growthNotes || "");
     setItems(
       [...alreadyHere, ...priorOpen].map((a) => ({
         id: a.id,
@@ -94,9 +102,6 @@ export default function CheckInForm() {
 
     // Pull in this person's still-open talking points so they can be
     // checked off (or left for next time) as part of this check-in.
-    const openPoints = await api.get<TalkingPoint[]>(
-      `/api/talking-points?teamMemberId=${ci.teamMemberId}&resolved=false`
-    );
     const priorOpenPoints = openPoints.filter((t) => t.checkInId !== ci.id);
     const alreadyHerePoints = ci.talkingPoints || [];
 
@@ -109,12 +114,19 @@ export default function CheckInForm() {
     );
     setDeletedActionItemIds([]);
     setDeletedTalkingPointIds([]);
-  }
+  }, [id]);
 
   useEffect(() => {
-    loadCheckIn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    let ignore = false;
+
+    void loadCheckIn(() => ignore).catch(() => {
+      if (!ignore) toast.error("Unable to load this check-in. Please try again.");
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [loadCheckIn]);
 
   function addItem() {
     setItems([...items, { description: "", status: "OPEN", dueDate: "" }]);
