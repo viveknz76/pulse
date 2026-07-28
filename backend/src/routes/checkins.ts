@@ -61,7 +61,7 @@ async function applyCheckInUpdate(
     deletedTalkingPointIds,
   } = data;
 
-  return prisma.$transaction(async (tx: any) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.checkIn.update({
       where: { id: checkIn.id },
       data: {

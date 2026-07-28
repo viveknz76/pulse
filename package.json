@@ -1,0 +1,9 @@
+{
+  "name": "pulse-checkin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
+    "lint:fix": "npm --prefix frontend run lint:fix && npm --prefix backend run lint:fix"
+  }
+}

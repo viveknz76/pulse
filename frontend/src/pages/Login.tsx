@@ -20,7 +20,7 @@ export default function Login() {
     }
     try {
       await loginWithGoogleCredential(response.credential);
-    } catch (err) {
+    } catch {
       setError("Sign-in failed. This account may not be authorized for this app.");
     }
   }

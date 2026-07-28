@@ -11,16 +11,24 @@ const updateSchema = z.object({
   dueDate: z.string().datetime().optional().nullable(),
 });
 
+const listQuerySchema = z.object({
+  status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]).optional(),
+  teamMemberId: z.string().optional(),
+});
+
 // GET /api/action-items?status=OPEN&teamMemberId=xxx
 router.get("/", asyncHandler(async (req, res) => {
-  const { status, teamMemberId } = req.query as { status?: string; teamMemberId?: string };
+  const parsed = listQuerySchema.safeParse(req.query);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const { status, teamMemberId } = parsed.data;
   const items = await prisma.actionItem.findMany({
     where: {
       carriedOverTo: { is: null },
       deletedAt: null,
       teamMember: { deletedAt: null },
       OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
-      ...(status ? { status: status as any } : {}),
+      ...(status ? { status } : {}),
       ...(teamMemberId ? { teamMemberId } : {}),
     },
     orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],

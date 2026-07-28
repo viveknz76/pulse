@@ -73,6 +73,18 @@ container, creating the schema. No manual migration step needed.
 
 ## Local development (without Docker)
 
+Run ESLint across both applications from the repository root:
+
+```bash
+npm run lint
+```
+
+To apply safe automatic fixes:
+
+```bash
+npm run lint:fix
+```
+
 Backend:
 ```bash
 cd backend

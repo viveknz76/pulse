@@ -63,7 +63,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     const lastCompleted = m.checkIns[0];
     const anchor = lastCompleted ? lastCompleted.scheduledDate : m.startDate;
     const nextDue = nextDueDate(anchor, m.cadence);
-    const { checkIns, ...rest } = m;
+    const { checkIns: _checkIns, ...rest } = m;
     return {
       ...rest,
       nextDueDate: nextDue,
