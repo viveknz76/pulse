@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { validateJwtSecret } from "../utils/validateJwtSecret";
 
 export interface AuthedRequest extends Request {
   user?: { email: string; name?: string };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const JWT_SECRET = validateJwtSecret(process.env.JWT_SECRET);
 export const AUTH_COOKIE_NAME = "checkin_session";
 
 export function signSession(payload: { email: string; name?: string }): string {
