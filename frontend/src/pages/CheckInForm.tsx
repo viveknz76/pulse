@@ -49,6 +49,8 @@ export default function CheckInForm() {
   const [saving, setSaving] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [deletedActionItemIds, setDeletedActionItemIds] = useState<string[]>([]);
+  const [deletedTalkingPointIds, setDeletedTalkingPointIds] = useState<string[]>([]);
 
   async function loadCheckIn() {
     if (!id) return;
@@ -94,6 +96,8 @@ export default function CheckInForm() {
         resolved: t.resolved,
       }))
     );
+    setDeletedActionItemIds([]);
+    setDeletedTalkingPointIds([]);
   }
 
   useEffect(() => {
@@ -110,6 +114,10 @@ export default function CheckInForm() {
   }
 
   function removeItem(index: number) {
+    const item = items[index];
+    if (item.id) {
+      setDeletedActionItemIds((ids) => [...new Set([...ids, item.id!])]);
+    }
     setItems(items.filter((_, i) => i !== index));
   }
 
@@ -122,6 +130,10 @@ export default function CheckInForm() {
   }
 
   function removePoint(index: number) {
+    const point = points[index];
+    if (point.id) {
+      setDeletedTalkingPointIds((ids) => [...new Set([...ids, point.id!])]);
+    }
     setPoints(points.filter((_, i) => i !== index));
   }
 
@@ -141,6 +153,8 @@ export default function CheckInForm() {
       talkingPoints: points
         .filter((p) => p.content.trim())
         .map((p) => ({ id: p.id, content: p.content.trim(), resolved: p.resolved })),
+      deletedActionItemIds,
+      deletedTalkingPointIds,
     };
   }
 

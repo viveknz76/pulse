@@ -29,6 +29,8 @@ const draftSchema = z.object({
   growthNotes: z.string().optional(),
   actionItems: z.array(actionItemInput).default([]),
   talkingPoints: z.array(talkingPointInput).default([]),
+  deletedActionItemIds: z.array(z.string()).default([]),
+  deletedTalkingPointIds: z.array(z.string()).default([]),
 });
 
 // Shared by /save (draft, stays SCHEDULED) and /complete (marks COMPLETED).
@@ -38,7 +40,15 @@ async function applyCheckInUpdate(
   data: z.infer<typeof draftSchema>,
   { complete }: { complete: boolean }
 ) {
-  const { wins, challenges, growthNotes, actionItems, talkingPoints } = data;
+  const {
+    wins,
+    challenges,
+    growthNotes,
+    actionItems,
+    talkingPoints,
+    deletedActionItemIds,
+    deletedTalkingPointIds,
+  } = data;
 
   return prisma.$transaction(async (tx: any) => {
     await tx.checkIn.update({
@@ -50,6 +60,28 @@ async function applyCheckInUpdate(
         ...(complete ? { status: "COMPLETED", completedAt: new Date() } : {}),
       },
     });
+
+    if (deletedActionItemIds.length > 0) {
+      await tx.actionItem.updateMany({
+        where: {
+          id: { in: deletedActionItemIds },
+          teamMemberId: checkIn.teamMemberId,
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    if (deletedTalkingPointIds.length > 0) {
+      await tx.talkingPoint.updateMany({
+        where: {
+          id: { in: deletedTalkingPointIds },
+          teamMemberId: checkIn.teamMemberId,
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     for (const item of actionItems) {
       if (item.id) {
