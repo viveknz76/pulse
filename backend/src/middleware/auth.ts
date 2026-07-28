@@ -34,10 +34,11 @@ export function isEmailAllowed(email: string): boolean {
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
   const allowedDomain = (process.env.ALLOWED_DOMAIN || "").trim().toLowerCase();
+  const allowDomainAccess = process.env.ALLOW_DOMAIN_ACCESS === "true";
 
   const normalized = email.toLowerCase();
   if (allowedEmails.includes(normalized)) return true;
-  if (allowedDomain && normalized.endsWith(`@${allowedDomain}`)) return true;
+  if (allowDomainAccess && allowedDomain && normalized.endsWith(`@${allowedDomain}`)) return true;
 
   // If neither is configured, fail closed (nobody allowed) rather than open.
   return false;

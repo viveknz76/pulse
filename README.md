@@ -35,15 +35,15 @@ cp .env.example .env
 Edit `.env`:
 
 - `GOOGLE_CLIENT_ID` — the client ID from step 1.
-- `ALLOWED_DOMAIN=ricado.co.nz` — lets any `@ricado.co.nz` Google account sign in (covers your
-  work SSO login).
-- `ALLOWED_EMAILS=viveknz76@gmail.com` — add your personal Gmail too if you might sign in with
-  either account. Comma-separate multiple addresses.
+- `ALLOWED_EMAILS` — comma-separate every Google account that should be able to sign in,
+  including your exact work SSO address and personal Gmail if you use both.
+- Leave `ALLOW_DOMAIN_ACCESS=false` for this single-user app. Setting it to `true` together
+  with `ALLOWED_DOMAIN` deliberately grants every account in that domain access to the same data.
 - `JWT_SECRET` — set to a long random string (e.g. `openssl rand -hex 32`).
 - Leave the Postgres and CORS values as-is for local use, or adjust if needed.
 
-Only emails matching `ALLOWED_EMAILS` or `ALLOWED_DOMAIN` can log in — everyone else gets a 403,
-even with a valid Google account.
+Only explicitly listed emails can log in by default. Domain-wide access requires the separate
+`ALLOW_DOMAIN_ACCESS=true` opt-in; everyone else gets a 403 even with a valid Google account.
 
 ## 3. Run it
 
