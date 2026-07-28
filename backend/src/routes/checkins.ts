@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { asyncHandler } from "../middleware/asyncHandler";
@@ -219,14 +220,25 @@ router.post("/", asyncHandler(async (req, res) => {
   });
   if (existing) return res.status(200).json(existing);
 
-  const checkIn = await prisma.checkIn.create({
-    data: {
-      teamMemberId: parsed.data.teamMemberId,
-      scheduledDate: new Date(parsed.data.scheduledDate),
-      status: "SCHEDULED",
-    },
-  });
-  res.status(201).json(checkIn);
+  try {
+    const checkIn = await prisma.checkIn.create({
+      data: {
+        teamMemberId: parsed.data.teamMemberId,
+        scheduledDate: new Date(parsed.data.scheduledDate),
+        status: "SCHEDULED",
+      },
+    });
+    return res.status(201).json(checkIn);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const winner = await prisma.checkIn.findFirst({
+        where: { teamMemberId: parsed.data.teamMemberId, status: "SCHEDULED", deletedAt: null },
+        orderBy: { scheduledDate: "desc" },
+      });
+      if (winner) return res.status(200).json(winner);
+    }
+    throw err;
+  }
 }));
 
 // POST /api/check-ins/:id/save
