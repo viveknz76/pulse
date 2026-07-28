@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Pencil, Trash2, UserCheck, UserMinus } from "lucide-react";
+import { History, Pencil, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { api } from "../api/client";
 import { Cadence, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -137,7 +137,7 @@ export default function TeamMembers() {
                 <TableHead>Cadence</TableHead>
                 <TableHead>Next due</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead></TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -178,13 +178,27 @@ export default function TeamMembers() {
                   </TableCell>
                   <TableCell>
                     {m.deletedAt ? (
-                      <div className="text-right text-[0.78rem] text-muted-foreground">
-                        {m.deletedBy && <>by {m.deletedBy}</>}
-                        {m.deletedBy && " · "}
-                        {new Date(m.deletedAt).toLocaleDateString()}
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="text-right text-[0.78rem] text-muted-foreground">
+                          {m.deletedBy && <>by {m.deletedBy}</>}
+                          {m.deletedBy && " · "}
+                          {new Date(m.deletedAt).toLocaleDateString()}
+                        </div>
+                        <Button asChild variant="ghost" size="sm">
+                          <Link to={`/team/${m.id}#check-in-history`}>
+                            <History />
+                            History
+                          </Link>
+                        </Button>
                       </div>
                     ) : (
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link to={`/team/${m.id}#check-in-history`}>
+                            <History />
+                            History
+                          </Link>
+                        </Button>
                         <IconActionButton
                           label="Edit"
                           icon={<Pencil />}

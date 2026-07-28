@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Check, Copy, Mail, Pencil, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
@@ -57,6 +57,7 @@ export default function TeamMemberDetail() {
   const [savingPoint, setSavingPoint] = useState(false);
   const [sendingSummaryIds, setSendingSummaryIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const location = useLocation();
 
   const load = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -78,6 +79,16 @@ export default function TeamMemberDetail() {
       ignore = true;
     };
   }, [load]);
+
+  useEffect(() => {
+    if (!member || location.hash !== "#check-in-history") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("check-in-history")?.scrollIntoView({ block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.hash, member]);
 
   async function startCheckIn() {
     if (!member) return;
@@ -322,18 +333,19 @@ export default function TeamMemberDetail() {
         </ul>
       )}
 
-      <SectionLabel className="mb-2">Relationship timeline</SectionLabel>
-      <p className="mb-5 text-sm text-muted-foreground">
-        The moments shaping your work together—wins, decisions, growth, and commitments.
-      </p>
-      <RelationshipTimeline checkIns={completedCheckIns} />
+      <section id="check-in-history" className="scroll-mt-6">
+        <SectionLabel className="mb-2">Relationship timeline</SectionLabel>
+        <p className="mb-5 text-sm text-muted-foreground">
+          The moments shaping your work together—wins, decisions, growth, and commitments.
+        </p>
+        <RelationshipTimeline checkIns={completedCheckIns} />
 
-      <SectionLabel>Detailed check-in history</SectionLabel>
-      {completedCheckIns.length === 0 && (
-        <p className="text-sm text-muted-foreground">No completed check-ins yet.</p>
-      )}
-      <div className="flex flex-col gap-4">
-        {completedCheckIns.map((c) => {
+        <SectionLabel>Detailed check-in history</SectionLabel>
+        {completedCheckIns.length === 0 && (
+          <p className="text-sm text-muted-foreground">No completed check-ins yet.</p>
+        )}
+        <div className="flex flex-col gap-4">
+          {completedCheckIns.map((c) => {
           const date = c.completedAt || c.scheduledDate;
           const talkingPoints = c.talkingPoints || [];
           const hasNarrative = !!(
@@ -441,8 +453,9 @@ export default function TeamMemberDetail() {
               </CardContent>
             </Card>
           );
-        })}
-      </div>
+          })}
+        </div>
+      </section>
 
       <EditMemberDialog
         member={member}
