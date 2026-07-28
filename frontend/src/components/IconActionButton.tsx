@@ -37,7 +37,7 @@ export function IconActionButton({
           disabled={disabled}
           aria-label={label}
           className={cn(
-            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4",
+            "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4",
             VARIANT_CLASSES[variant],
             className
           )}
@@ -66,7 +66,7 @@ export function IconLinkAction({ label, icon, to, variant = "default", className
           to={to}
           aria-label={label}
           className={cn(
-            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors [&_svg]:size-4",
+            "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-all active:scale-90 [&_svg]:size-4",
             VARIANT_CLASSES[variant],
             className
           )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, Check, CornerUpRight, ArrowUpRight } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, ReviewData } from "../types";
 import { PageLoading } from "../components/PageLoading";
@@ -16,11 +17,17 @@ const ROW_CLASS =
 function ActionItemRow({ item, onChanged }: { item: ActionItem; onChanged: () => void }) {
   async function setStatus(status: ActionItemStatus) {
     await api.patch(`/api/action-items/${item.id}`, { status });
+    if (status === "DONE") {
+      toast.success("Commitment complete — nice momentum.");
+    } else if (status === "IN_PROGRESS") {
+      toast("Moved into progress.");
+    }
     onChanged();
   }
 
   async function carryOver() {
     await api.post(`/api/action-items/${item.id}/carry-over`);
+    toast("Carried forward — still in view.");
     onChanged();
   }
 

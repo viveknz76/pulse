@@ -8,6 +8,7 @@ import { PageTitle } from "../components/Typography";
 import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
 import { DatePicker } from "../components/DatePicker";
+import { CompletionCelebration } from "../components/CompletionCelebration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -390,12 +391,19 @@ export default function CheckInForm() {
 
       <Dialog open={summaryOpen} onOpenChange={(open) => !open && handleSummaryClose()}>
         <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Check-in complete</DialogTitle>
+          <DialogHeader className="items-center text-center">
+            <CompletionCelebration />
+            <DialogTitle className="text-xl">A meaningful check-in, complete.</DialogTitle>
             <DialogDescription>
-              Copy this summary to share with {checkIn.teamMember?.name} over email.
+              You captured the conversation and what comes next. The summary is ready to share
+              with {checkIn.teamMember?.name}.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-brand-strong uppercase">
+            <span className="h-px flex-1 bg-brand-border" />
+            Ready to share
+            <span className="h-px flex-1 bg-brand-border" />
+          </div>
           <div className="relative">
             <pre className="max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-overlay-subtle p-4 pr-20 font-sans text-sm">
               {summaryText}
@@ -421,8 +429,8 @@ export default function CheckInForm() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleSummaryClose}>
-              Done
+            <Button onClick={handleSummaryClose}>
+              Finish
             </Button>
           </DialogFooter>
         </DialogContent>
