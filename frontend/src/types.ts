@@ -30,6 +30,7 @@ export interface CheckIn {
   wins?: string | null;
   challenges?: string | null;
   growthNotes?: string | null;
+  energyLevel?: number | null;
   actionItems: ActionItem[];
   talkingPoints?: TalkingPoint[];
   teamMember?: TeamMember;

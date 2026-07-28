@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
+import { energyLevelLabel } from "@/lib/energyPulse";
 
 function timeAgo(dateStr: string): string {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
@@ -145,6 +146,7 @@ export default function TeamMemberDetail() {
       wins: c.wins,
       challenges: c.challenges,
       growthNotes: c.growthNotes,
+      energyLevel: c.energyLevel,
       talkingPoints: c.talkingPoints || [],
       actionItems: c.actionItems,
     });
@@ -320,7 +322,7 @@ export default function TeamMemberDetail() {
         {completedCheckIns.map((c) => {
           const date = c.completedAt || c.scheduledDate;
           const talkingPoints = c.talkingPoints || [];
-          const hasNarrative = !!(c.wins || c.challenges || c.growthNotes);
+          const hasNarrative = !!(c.energyLevel || c.wins || c.challenges || c.growthNotes);
           const hasStructured = talkingPoints.length > 0 || c.actionItems.length > 0;
 
           return (
@@ -353,6 +355,11 @@ export default function TeamMemberDetail() {
               <CardContent className="flex flex-col gap-4">
                 {hasNarrative && (
                   <div className="flex flex-col gap-3">
+                    {c.energyLevel && (
+                      <HistoryField label="Starting pulse">
+                        {energyLevelLabel(c.energyLevel)}
+                      </HistoryField>
+                    )}
                     {c.wins && <HistoryField label="Wins">{c.wins}</HistoryField>}
                     {c.challenges && <HistoryField label="Challenges">{c.challenges}</HistoryField>}
                     {c.growthNotes && <HistoryField label="Growth">{c.growthNotes}</HistoryField>}

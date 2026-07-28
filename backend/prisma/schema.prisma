@@ -58,6 +58,7 @@ model CheckIn {
   wins          String?
   challenges    String?
   growthNotes   String?
+  energyLevel   Int?
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

@@ -34,6 +34,7 @@ const draftSchema = z.object({
   wins: z.string().optional(),
   challenges: z.string().optional(),
   growthNotes: z.string().optional(),
+  energyLevel: z.number().int().min(1).max(5).optional().nullable(),
   actionItems: z.array(actionItemInput).default([]),
   talkingPoints: z.array(talkingPointInput).default([]),
   deletedActionItemIds: z.array(z.string()).default([]),
@@ -51,6 +52,7 @@ async function applyCheckInUpdate(
     wins,
     challenges,
     growthNotes,
+    energyLevel,
     actionItems,
     talkingPoints,
     deletedActionItemIds,
@@ -64,6 +66,7 @@ async function applyCheckInUpdate(
         wins,
         challenges,
         growthNotes,
+        energyLevel,
         ...(complete ? { status: "COMPLETED", completedAt: new Date() } : {}),
       },
     });

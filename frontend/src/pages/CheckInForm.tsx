@@ -9,6 +9,7 @@ import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
 import { DatePicker } from "../components/DatePicker";
 import { CompletionCelebration } from "../components/CompletionCelebration";
+import { EnergyPulse } from "../components/EnergyPulse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +55,7 @@ export default function CheckInForm() {
   const [wins, setWins] = useState("");
   const [challenges, setChallenges] = useState("");
   const [growthNotes, setGrowthNotes] = useState("");
+  const [energyLevel, setEnergyLevel] = useState<number | null>(null);
   const [items, setItems] = useState<DraftActionItem[]>([]);
   const [points, setPoints] = useState<DraftTalkingPoint[]>([]);
   const [saving, setSaving] = useState(false);
@@ -93,6 +95,7 @@ export default function CheckInForm() {
     setWins(ci.wins || "");
     setChallenges(ci.challenges || "");
     setGrowthNotes(ci.growthNotes || "");
+    setEnergyLevel(ci.energyLevel ?? null);
     setItems(
       [...alreadyHere, ...priorOpen].map((a) => ({
         id: a.id,
@@ -176,6 +179,7 @@ export default function CheckInForm() {
       wins,
       challenges,
       growthNotes,
+      energyLevel,
       talkingPoints: points,
       actionItems: items,
     });
@@ -186,6 +190,7 @@ export default function CheckInForm() {
       wins,
       challenges,
       growthNotes,
+      energyLevel,
       actionItems: items
         .filter((it) => it.description.trim())
         .map((it) => ({
@@ -263,6 +268,8 @@ export default function CheckInForm() {
   return (
     <div className="max-w-[680px] animate-in fade-in duration-300">
       <PageTitle size="md">Check-in — {checkIn.teamMember?.name}</PageTitle>
+
+      <EnergyPulse value={energyLevel} onChange={setEnergyLevel} />
 
       <div className="mb-6">
         <label className={FIELD_LABEL}>Talking points</label>

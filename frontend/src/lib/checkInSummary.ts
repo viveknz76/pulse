@@ -1,5 +1,6 @@
 import { format, parse } from "date-fns";
 import { ActionItemStatus } from "@/types";
+import { energyLevelLabel } from "@/lib/energyPulse";
 
 export const ACTION_ITEM_STATUS_LABEL: Record<ActionItemStatus, string> = {
   OPEN: "Open",
@@ -24,6 +25,7 @@ interface BuildCheckInSummaryInput {
   wins?: string | null;
   challenges?: string | null;
   growthNotes?: string | null;
+  energyLevel?: number | null;
   talkingPoints: SummaryTalkingPoint[];
   actionItems: SummaryActionItem[];
 }
@@ -43,12 +45,17 @@ export function buildCheckInSummaryText({
   wins,
   challenges,
   growthNotes,
+  energyLevel,
   talkingPoints,
   actionItems,
 }: BuildCheckInSummaryInput): string {
   const lines: string[] = [];
   lines.push(`Check-in summary — ${teamMemberName}`);
   lines.push(date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }));
+  const startingPulse = energyLevelLabel(energyLevel);
+  if (startingPulse) {
+    lines.push(`Starting pulse: ${startingPulse}`);
+  }
   lines.push("");
 
   lines.push("Wins");
