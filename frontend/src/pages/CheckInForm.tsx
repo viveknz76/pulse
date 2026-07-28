@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Trash2, Copy, Mail } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Gauge,
+  ListChecks,
+  Mail,
+  MessagesSquare,
+  Save,
+  Sparkles,
+  Trash2,
+  Waypoints,
+} from "lucide-react";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
@@ -10,6 +23,7 @@ import { IconActionButton } from "../components/IconActionButton";
 import { DatePicker } from "../components/DatePicker";
 import { CompletionCelebration } from "../components/CompletionCelebration";
 import { EnergyPulse } from "../components/EnergyPulse";
+import { GuidedJourney, JourneyStep } from "../components/GuidedJourney";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
+import { energyLevelLabel } from "@/lib/energyPulse";
 
 interface DraftActionItem {
   id?: string; // set when this is an existing action item being carried over/edited
@@ -47,6 +62,92 @@ function toDateInput(value?: string | null): string {
 const FIELD_LABEL = "mb-2 block text-[0.88rem] font-semibold text-foreground";
 const FIELD_HINT = "mb-3 text-[0.85rem] text-muted-foreground";
 
+const JOURNEY_STEPS: JourneyStep[] = [
+  {
+    label: "Arrive",
+    eyebrow: "Start with the human signal",
+    title: "How are you both arriving?",
+    description:
+      "Pause before the agenda. A quick energy check can change how you hold the conversation.",
+    Icon: Gauge,
+  },
+  {
+    label: "Connect",
+    eyebrow: "Make space for what matters",
+    title: "What needs to be heard today?",
+    description:
+      "Bring forward the topics that deserve attention. Check them off as you talk, or carry them onward.",
+    Icon: MessagesSquare,
+  },
+  {
+    label: "Reflect",
+    eyebrow: "See the whole picture",
+    title: "What is working—and what is getting in the way?",
+    description:
+      "Celebrate meaningful progress, then make room for challenges without rushing to solve them.",
+    Icon: Sparkles,
+  },
+  {
+    label: "Align",
+    eyebrow: "Turn conversation into clarity",
+    title: "What are you learning and deciding together?",
+    description:
+      "Capture the choices and growth that will matter after today’s conversation is over.",
+    Icon: Waypoints,
+  },
+  {
+    label: "Commit",
+    eyebrow: "Leave with shared ownership",
+    title: "What happens next?",
+    description:
+      "Turn good intentions into clear commitments, with an owner’s next move and a useful date.",
+    Icon: ListChecks,
+  },
+  {
+    label: "Review",
+    eyebrow: "Close the loop",
+    title: "Does this feel true to the conversation?",
+    description:
+      "Take one quiet pass through what you captured. You can revisit any step before completing.",
+    Icon: CheckCircle2,
+  },
+];
+
+function ReviewCard({
+  label,
+  value,
+  onEdit,
+}: {
+  label: string;
+  value?: string | null;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="rounded-xl bg-muted/55 p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          {label}
+        </p>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-semibold text-brand-strong hover:underline"
+        >
+          Edit
+        </button>
+      </div>
+      <p
+        className={cn(
+          "text-sm leading-relaxed whitespace-pre-line",
+          !value?.trim() && "text-muted-foreground"
+        )}
+      >
+        {value?.trim() || "Nothing captured yet"}
+      </p>
+    </div>
+  );
+}
+
 export default function CheckInForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -67,6 +168,7 @@ export default function CheckInForm() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryText, setSummaryText] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   const loadCheckIn = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -121,6 +223,10 @@ export default function CheckInForm() {
     );
     setDeletedActionItemIds([]);
     setDeletedTalkingPointIds([]);
+    const storedStep = Number(window.localStorage.getItem(`pulse-check-in-step:${ci.id}`));
+    if (Number.isInteger(storedStep) && storedStep >= 0 && storedStep < JOURNEY_STEPS.length) {
+      setCurrentStep(storedStep);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -229,11 +335,21 @@ export default function CheckInForm() {
     setSaving(true);
     try {
       await api.post(`/api/check-ins/${checkIn.id}/complete`, buildPayload());
+      window.localStorage.removeItem(`pulse-check-in-step:${checkIn.id}`);
       setSummaryText(buildSummaryText());
       setSummaryOpen(true);
     } finally {
       setSaving(false);
     }
+  }
+
+  function moveToStep(step: number) {
+    const nextStep = Math.max(0, Math.min(step, JOURNEY_STEPS.length - 1));
+    setCurrentStep(nextStep);
+    if (checkIn) {
+      window.localStorage.setItem(`pulse-check-in-step:${checkIn.id}`, String(nextStep));
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSummaryClose() {
@@ -270,146 +386,279 @@ export default function CheckInForm() {
   if (!checkIn) return <PageLoading />;
 
   return (
-    <div className="max-w-[680px] animate-in fade-in duration-300">
-      <PageTitle size="md">Check-in — {checkIn.teamMember?.name}</PageTitle>
+    <div className="max-w-[760px] animate-in fade-in duration-300">
+      <PageTitle size="md" className="mb-1">
+        Check-in with {checkIn.teamMember?.name}
+      </PageTitle>
+      <p className="mb-7 text-sm text-muted-foreground">
+        A little space to listen, reflect, and leave aligned. Everything here is optional.
+      </p>
 
-      <EnergyPulse value={energyLevel} onChange={setEnergyLevel} />
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Talking points</label>
-        <p className={FIELD_HINT}>
-          Things to bring up in this check-in — check them off as you cover them, or leave open to
-          carry into the next one.
-        </p>
-        {points.map((point, index) => (
-          <div key={point.id ?? `new-point-${index}`} className="mb-2.5 flex items-center gap-2">
-            <Checkbox
-              checked={point.resolved}
-              onCheckedChange={(checked) => updatePoint(index, { resolved: checked === true })}
-            />
-            <Input
-              className={cn("flex-1", point.resolved && "text-muted-foreground line-through")}
-              placeholder="Something to discuss"
-              value={point.content}
-              onChange={(e) => updatePoint(index, { content: e.target.value })}
-            />
-            <IconActionButton
-              label="Remove"
-              icon={<Trash2 />}
-              variant="danger"
-              onClick={() => removePoint(index)}
-            />
+      <GuidedJourney
+        steps={JOURNEY_STEPS}
+        currentStep={currentStep}
+        onStepChange={moveToStep}
+      >
+        {currentStep === 0 && (
+          <div>
+            <EnergyPulse value={energyLevel} onChange={setEnergyLevel} embedded />
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+              This is a conversation cue, not a score. Use it to decide whether today needs more
+              listening, more energy, or simply a gentler pace.
+            </p>
           </div>
-        ))}
-        <Button type="button" variant="outline" onClick={addPoint}>
-          + Add talking point
-        </Button>
-      </div>
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Wins</label>
-        <Textarea
-          rows={3}
-          value={wins}
-          onChange={(e) => setWins(e.target.value)}
-          placeholder="What's gone well since the last check-in?"
-        />
-      </div>
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Challenges</label>
-        <Textarea
-          rows={3}
-          value={challenges}
-          onChange={(e) => setChallenges(e.target.value)}
-          placeholder="What's been difficult or blocked?"
-        />
-      </div>
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Decisions</label>
-        <p className={FIELD_HINT}>Choices, agreements, or direction you want to remember.</p>
-        <Textarea
-          rows={3}
-          value={decisions}
-          onChange={(e) => setDecisions(e.target.value)}
-          placeholder="What did you agree or decide together?"
-        />
-      </div>
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Growth</label>
-        <Textarea
-          rows={3}
-          value={growthNotes}
-          onChange={(e) => setGrowthNotes(e.target.value)}
-          placeholder="Development, learning, career growth notes"
-        />
-      </div>
-
-      <div className="mb-6">
-        <label className={FIELD_LABEL}>Action items</label>
-        <p className={FIELD_HINT}>
-          Includes any open items carried over from previous check-ins — update their status or
-          add new ones.
-        </p>
-        {items.map((item, index) => (
-          <div key={item.id ?? `new-${index}`} className="mb-2.5 flex items-center gap-2">
-            <Input
-              className="flex-1"
-              placeholder="Action item description"
-              value={item.description}
-              onChange={(e) => updateItem(index, { description: e.target.value })}
-            />
-            <Select
-              value={item.status}
-              onValueChange={(value) => updateItem(index, { status: value as ActionItemStatus })}
-            >
-              <SelectTrigger className="w-[130px] shrink-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="OPEN">Open</SelectItem>
-                <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-                <SelectItem value="DONE">Done</SelectItem>
-              </SelectContent>
-            </Select>
-            <DatePicker
-              className="w-[150px] shrink-0"
-              value={item.dueDate}
-              onChange={(dueDate) => updateItem(index, { dueDate })}
-            />
-            <IconActionButton
-              label="Remove"
-              icon={<Trash2 />}
-              variant="danger"
-              onClick={() => removeItem(index)}
-            />
-          </div>
-        ))}
-        <Button type="button" variant="outline" onClick={addItem}>
-          + Add action item
-        </Button>
-      </div>
-
-      <div className="mt-8 flex items-center gap-3">
-        <Button size="lg" variant="success" onClick={handleComplete} disabled={saving || savingDraft}>
-          {saving ? "Completing…" : "Complete check-in"}
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={handleSaveDraft}
-          disabled={saving || savingDraft}
-        >
-          {savingDraft ? "Saving…" : "Save draft"}
-        </Button>
-        {lastSavedAt && (
-          <span className="text-[0.8rem] text-muted-foreground">
-            Saved at {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </span>
         )}
-      </div>
+
+        {currentStep === 1 && (
+          <div>
+            {points.length === 0 && (
+              <div className="mb-4 rounded-xl bg-muted/55 px-4 py-5 text-center">
+                <p className="text-sm font-medium">No talking points waiting.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add what feels important, or continue when the conversation is already clear.
+                </p>
+              </div>
+            )}
+            {points.map((point, index) => (
+              <div
+                key={point.id ?? `new-point-${index}`}
+                className="mb-2.5 flex items-center gap-2"
+              >
+                <Checkbox
+                  checked={point.resolved}
+                  onCheckedChange={(checked) => updatePoint(index, { resolved: checked === true })}
+                  aria-label={`Mark “${point.content || "talking point"}” as discussed`}
+                />
+                <Input
+                  className={cn("flex-1", point.resolved && "text-muted-foreground line-through")}
+                  placeholder="Something worth talking about"
+                  value={point.content}
+                  onChange={(e) => updatePoint(index, { content: e.target.value })}
+                />
+                <IconActionButton
+                  label="Remove talking point"
+                  icon={<Trash2 />}
+                  variant="danger"
+                  onClick={() => removePoint(index)}
+                />
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addPoint}>
+              + Add talking point
+            </Button>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="grid gap-6">
+            <div>
+              <label className={FIELD_LABEL}>What felt worth celebrating?</label>
+              <p className={FIELD_HINT}>
+                Progress, effort, a brave moment, or something that made work feel lighter.
+              </p>
+              <Textarea
+                rows={4}
+                value={wins}
+                onChange={(e) => setWins(e.target.value)}
+                placeholder="A win we want to remember…"
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Where did things feel hard?</label>
+              <p className={FIELD_HINT}>
+                Name friction, uncertainty, or support that would make a difference.
+              </p>
+              <Textarea
+                rows={4}
+                value={challenges}
+                onChange={(e) => setChallenges(e.target.value)}
+                placeholder="Something getting in the way…"
+              />
+            </div>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="grid gap-6">
+            <div>
+              <label className={FIELD_LABEL}>What did you decide together?</label>
+              <p className={FIELD_HINT}>
+                Capture choices, agreements, and direction you should not have to reconstruct
+                later.
+              </p>
+              <Textarea
+                rows={4}
+                value={decisions}
+                onChange={(e) => setDecisions(e.target.value)}
+                placeholder="We agreed that…"
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Where is growth showing up?</label>
+              <p className={FIELD_HINT}>
+                Notice learning, confidence, feedback, or the next edge to explore.
+              </p>
+              <Textarea
+                rows={4}
+                value={growthNotes}
+                onChange={(e) => setGrowthNotes(e.target.value)}
+                placeholder="A strength growing, or an opportunity to explore…"
+              />
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <div>
+            {items.length === 0 && (
+              <div className="mb-4 rounded-xl bg-muted/55 px-4 py-5 text-center">
+                <p className="text-sm font-medium">No commitments captured yet.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a next step only when it genuinely helps move the conversation forward.
+                </p>
+              </div>
+            )}
+            {items.map((item, index) => (
+              <div
+                key={item.id ?? `new-${index}`}
+                className="mb-3 rounded-xl bg-muted/45 p-3"
+              >
+                <div className="flex items-start gap-2">
+                  <Input
+                    className="flex-1 bg-card"
+                    placeholder="A clear next step"
+                    value={item.description}
+                    onChange={(e) => updateItem(index, { description: e.target.value })}
+                  />
+                  <IconActionButton
+                    label="Remove commitment"
+                    icon={<Trash2 />}
+                    variant="danger"
+                    onClick={() => removeItem(index)}
+                  />
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <Select
+                    value={item.status}
+                    onValueChange={(value) =>
+                      updateItem(index, { status: value as ActionItemStatus })
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-card">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In progress</SelectItem>
+                      <SelectItem value="DONE">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <DatePicker
+                    className="w-full bg-card"
+                    value={item.dueDate}
+                    onChange={(dueDate) => updateItem(index, { dueDate })}
+                  />
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addItem}>
+              + Add commitment
+            </Button>
+            {items.length > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Open commitments from earlier check-ins appear here too, so nothing quietly slips
+                away.
+              </p>
+            )}
+          </div>
+        )}
+
+        {currentStep === 5 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ReviewCard
+              label="Starting energy"
+              value={energyLevelLabel(energyLevel)}
+              onEdit={() => moveToStep(0)}
+            />
+            <ReviewCard
+              label="Talking points"
+              value={points
+                .filter((point) => point.content.trim())
+                .map((point) => `${point.resolved ? "✓" : "○"} ${point.content.trim()}`)
+                .join("\n")}
+              onEdit={() => moveToStep(1)}
+            />
+            <ReviewCard label="Wins" value={wins} onEdit={() => moveToStep(2)} />
+            <ReviewCard label="Challenges" value={challenges} onEdit={() => moveToStep(2)} />
+            <ReviewCard label="Decisions" value={decisions} onEdit={() => moveToStep(3)} />
+            <ReviewCard label="Growth" value={growthNotes} onEdit={() => moveToStep(3)} />
+            <div className="sm:col-span-2">
+              <ReviewCard
+                label="Commitments"
+                value={items
+                  .filter((item) => item.description.trim())
+                  .map((item) => `• ${item.description.trim()}`)
+                  .join("\n")}
+                onEdit={() => moveToStep(4)}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-7 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            {currentStep > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => moveToStep(currentStep - 1)}
+              >
+                <ChevronLeft />
+                Back
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={saving || savingDraft}
+            >
+              <Save />
+              {savingDraft ? "Saving…" : "Save draft"}
+            </Button>
+          </div>
+
+          <div className="sm:ml-auto">
+            {currentStep < JOURNEY_STEPS.length - 1 ? (
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => moveToStep(currentStep + 1)}
+              >
+                Continue to {JOURNEY_STEPS[currentStep + 1].label}
+                <ChevronRight />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={handleComplete}
+                disabled={saving || savingDraft}
+              >
+                <CheckCircle2 />
+                {saving ? "Completing…" : "Complete check-in"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {lastSavedAt && (
+          <p className="mt-3 text-right text-xs text-muted-foreground">
+            Draft saved at{" "}
+            {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
+      </GuidedJourney>
 
       <Dialog open={summaryOpen} onOpenChange={(open) => !open && handleSummaryClose()}>
         <DialogContent className="sm:max-w-xl">

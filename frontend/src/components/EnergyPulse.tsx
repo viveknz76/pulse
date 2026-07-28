@@ -5,14 +5,21 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export function EnergyPulse({
   value,
   onChange,
+  embedded = false,
 }: {
   value: number | null;
   onChange: (value: number | null) => void;
+  embedded?: boolean;
 }) {
   const selectedLabel = ENERGY_LEVELS.find((level) => level.value === value)?.label;
 
   return (
-    <fieldset className="mb-7 rounded-xl border border-border bg-card px-4 py-3.5">
+    <fieldset
+      className={cn(
+        "rounded-xl",
+        embedded ? "bg-muted/45 px-4 py-4" : "mb-7 border border-border bg-card px-4 py-3.5"
+      )}
+    >
       <legend className="sr-only">Starting energy</legend>
       <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div>
