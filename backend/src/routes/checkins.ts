@@ -267,6 +267,9 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
 
   const checkIn = await prisma.checkIn.findUnique({ where: { id: req.params.id } });
   if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
+  if (checkIn.status === "COMPLETED") {
+    return res.status(409).json({ error: "This check-in is already completed" });
+  }
 
   const result = await applyCheckInUpdate(checkIn, parsed.data, { complete: true });
   res.json(result);
