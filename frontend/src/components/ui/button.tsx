@@ -5,14 +5,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold shadow-none ring-1 ring-inset ring-overlay-strong transition-colors disabled:pointer-events-none disabled:cursor-default disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-1 ring-inset transition-all disabled:pointer-events-none disabled:cursor-default disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground ring-overlay-strong hover:bg-[var(--primary-hover)]",
+        default:
+          "bg-primary text-primary-foreground ring-primary/20 shadow-[0_5px_14px_var(--brand-glow)] hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_8px_20px_var(--brand-glow)]",
         destructive:
           "bg-destructive/10 text-destructive ring-destructive/15 hover:bg-destructive/15 focus-visible:ring-destructive/20",
-        outline: "border-0 bg-overlay-subtle ring-overlay-strong hover:bg-overlay-strong text-foreground",
+        outline:
+          "border-0 bg-overlay-subtle ring-overlay-strong hover:-translate-y-0.5 hover:bg-brand-soft hover:text-brand-strong hover:ring-brand-border text-foreground",
         secondary: "bg-secondary text-secondary-foreground ring-overlay-strong hover:bg-overlay-strong",
         ghost: "ring-0 hover:bg-accent hover:text-accent-foreground",
         link: "ring-0 text-foreground underline-offset-4 hover:underline",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { api } from "../api/client";
 import { TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -27,7 +27,8 @@ function greetingWord(): string {
   return "Good evening";
 }
 
-const CARD_BASE = "p-5 transition-colors duration-150 hover:bg-overlay-subtle";
+const CARD_BASE =
+  "p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-border hover:shadow-[0_12px_28px_var(--brand-glow)]";
 
 export default function Dashboard() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
@@ -67,12 +68,18 @@ export default function Dashboard() {
 
   return (
     <div className="animate-in fade-in duration-300">
-      <div className="mb-10 flex items-end justify-between">
+      <div className="mb-10 flex items-end justify-between gap-6">
         <div>
-          <p className="mb-2 text-[0.8rem] tracking-wide text-[var(--muted-foreground-2)] uppercase">
+          <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-[0.72rem] font-semibold tracking-wide text-brand-strong uppercase ring-1 ring-inset ring-brand-border">
+            <Sparkles className="size-3" />
             {todayLabel}
           </p>
-          <PageTitle className="mb-0">{greetingWord()}</PageTitle>
+          <PageTitle className="mb-1 bg-gradient-to-r from-brand-strong to-brand bg-clip-text text-transparent">
+            {greetingWord()}
+          </PageTitle>
+          <p className="text-sm text-muted-foreground">
+            Let’s make the next conversation count.
+          </p>
         </div>
         <Button variant="outline" asChild>
           <Link to="/team">Manage team</Link>

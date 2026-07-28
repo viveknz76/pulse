@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MemberAvatar } from "./MemberAvatar";
 import { IconActionButton } from "./IconActionButton";
+import { PulseBrand } from "./PulseBrand";
 import { cn } from "@/lib/utils";
 
 function DashboardIcon() {
@@ -53,10 +54,10 @@ function NavItem({
     <Link
       to={to}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors",
+        "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
         active
-          ? "bg-overlay-strong text-foreground"
-          : "text-muted-foreground hover:bg-overlay-subtle hover:text-foreground"
+          ? "bg-brand-soft text-brand-strong ring-1 ring-inset ring-brand-border"
+          : "text-muted-foreground hover:translate-x-0.5 hover:bg-overlay-subtle hover:text-foreground"
       )}
     >
       {children}
@@ -78,10 +79,7 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen w-full gap-4 bg-background p-4 text-foreground">
       <aside className="flex w-[var(--sidebar-width)] shrink-0 flex-col p-3">
-        <div className="pl-1 text-xl font-semibold tracking-tight">Pulse</div>
-        <div className="mb-8 pl-1 text-xs text-muted-foreground">
-          Thoughtful check-ins, Meaningful momentum
-        </div>
+        <PulseBrand showTagline className="mb-8 px-1" />
         <nav className="flex flex-1 flex-col gap-1">
           <NavItem to="/" active={isDashboardActive}>
             <DashboardIcon />
@@ -114,7 +112,11 @@ export default function Layout() {
           />
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto rounded-lg bg-panel p-10 ring-1 ring-overlay-strong">
+      <main
+        className="relative flex-1 overflow-y-auto rounded-2xl bg-panel p-10 ring-1 ring-overlay-strong"
+        style={{ boxShadow: "var(--surface-shadow)" }}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/60 to-transparent" />
         <Outlet />
       </main>
     </div>

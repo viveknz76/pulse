@@ -7,38 +7,43 @@
  * Design tokens only — no component rules live here. Everything else is
  * Tailwind utility classes + shadcn/ui primitives in src/components/ui.
  *
- * Structure follows Tailwind UI's Catalyst kit: zinc neutral scale, Inter
- * type, lime/rose/amber tinted status chips, hairline dividers instead of
- * drop-shadow cards. Colors are defined twice — :root (light) and .dark
- * (dark) — so the whole app re-themes by toggling the .dark class on
- * <html>; @theme inline below maps both to the same Tailwind utility names.
+ * Pulse uses indigo as its brand colour while keeping lime/rose/amber
+ * exclusively for semantic status. Colors are defined twice — :root (light)
+ * and .dark (dark) — so the whole app re-themes by toggling the .dark class
+ * on <html>; @theme inline below maps both to the same Tailwind utilities.
  */
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --background: #f4f4f5;
+  --background: #f5f6fb;
   --panel: #ffffff;
-  --foreground: #09090b;
+  --foreground: #18181b;
 
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #18181b;
 
   --popover: #ffffff;
-  --popover-foreground: #09090b;
+  --popover-foreground: #18181b;
 
-  --primary: #52525b;
-  --primary-hover: #3f3f46;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(9, 9, 11, 0.04);
-  --secondary-foreground: #09090b;
+  --brand: #4f46e5;
+  --brand-strong: #3730a3;
+  --brand-soft: #eef2ff;
+  --brand-glow: rgba(99, 102, 241, 0.22);
+  --brand-border: rgba(79, 70, 229, 0.2);
 
-  --muted: rgba(9, 9, 11, 0.04);
+  --secondary: rgba(79, 70, 229, 0.06);
+  --secondary-foreground: #3730a3;
+
+  --muted: rgba(24, 24, 27, 0.04);
   --muted-foreground: #71717a;
   --muted-foreground-2: #52525b;
 
-  --accent: rgba(9, 9, 11, 0.04);
-  --accent-foreground: #09090b;
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
 
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
@@ -53,40 +58,47 @@
   --warning-tint: rgba(217, 119, 6, 0.08);
   --warning-text: #b45309;
 
-  --border: rgba(9, 9, 11, 0.15);
-  --input: rgba(9, 9, 11, 0.12);
-  --ring: #71717a;
+  --border: rgba(24, 24, 27, 0.12);
+  --input: rgba(24, 24, 27, 0.1);
+  --ring: #6366f1;
 
-  --overlay-subtle: rgba(9, 9, 11, 0.04);
-  --overlay-strong: rgba(9, 9, 11, 0.08);
+  --overlay-subtle: rgba(24, 24, 27, 0.035);
+  --overlay-strong: rgba(24, 24, 27, 0.075);
+  --surface-shadow: 0 1px 2px rgba(24, 24, 27, 0.04), 0 12px 32px rgba(79, 70, 229, 0.05);
 
   --sidebar-width: 15rem;
 }
 
 .dark {
-  --background: #09090b;
-  --panel: #18181b;
-  --foreground: #ffffff;
+  --background: #090b16;
+  --panel: #111321;
+  --foreground: #f4f4f5;
 
-  --card: #18181b;
-  --card-foreground: #ffffff;
+  --card: #171927;
+  --card-foreground: #f4f4f5;
 
-  --popover: #27272a;
-  --popover-foreground: #ffffff;
+  --popover: #202235;
+  --popover-foreground: #f4f4f5;
 
-  --primary: #52525b;
-  --primary-hover: #71717a;
+  --primary: #6366f1;
+  --primary-hover: #818cf8;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(255, 255, 255, 0.05);
-  --secondary-foreground: #ffffff;
+  --brand: #818cf8;
+  --brand-strong: #a5b4fc;
+  --brand-soft: rgba(99, 102, 241, 0.14);
+  --brand-glow: rgba(99, 102, 241, 0.28);
+  --brand-border: rgba(129, 140, 248, 0.24);
+
+  --secondary: rgba(129, 140, 248, 0.1);
+  --secondary-foreground: #c7d2fe;
 
   --muted: rgba(255, 255, 255, 0.05);
   --muted-foreground: #a1a1aa;
   --muted-foreground-2: #71717a;
 
-  --accent: rgba(255, 255, 255, 0.05);
-  --accent-foreground: #ffffff;
+  --accent: rgba(99, 102, 241, 0.14);
+  --accent-foreground: #c7d2fe;
 
   --destructive: #fb64b6;
   --destructive-foreground: #ffffff;
@@ -101,12 +113,13 @@
   --warning-tint: rgba(251, 191, 36, 0.1);
   --warning-text: #fbbf24;
 
-  --border: rgba(255, 255, 255, 0.16);
+  --border: rgba(255, 255, 255, 0.13);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: #71717a;
+  --ring: #818cf8;
 
   --overlay-subtle: rgba(255, 255, 255, 0.05);
   --overlay-strong: rgba(255, 255, 255, 0.1);
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 14px 36px rgba(0, 0, 0, 0.18);
 }
 
 @theme inline {
@@ -141,6 +154,10 @@
   --color-ring: var(--ring);
   --color-overlay-subtle: var(--overlay-subtle);
   --color-overlay-strong: var(--overlay-strong);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-border: var(--brand-border);
 }
 
 @layer base {
@@ -153,6 +170,7 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    min-width: 320px;
   }
 
   button:not(:disabled),
