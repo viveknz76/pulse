@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Trash2, Copy } from "lucide-react";
+import { Trash2, Copy, Mail } from "lucide-react";
 import { api } from "../api/client";
 import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
 import { PageTitle } from "../components/Typography";
@@ -62,6 +62,7 @@ export default function CheckInForm() {
   const [deletedTalkingPointIds, setDeletedTalkingPointIds] = useState<string[]>([]);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [summaryText, setSummaryText] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const loadCheckIn = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -235,6 +236,27 @@ export default function CheckInForm() {
     toast.success("Summary copied to clipboard");
   }
 
+  async function handleSendSummaryEmail() {
+    if (!checkIn || sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      const dateLabel = new Date().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      await api.post(`/api/check-ins/${checkIn.id}/send-summary`, {
+        subject: `Check-in summary — ${checkIn.teamMember?.name} — ${dateLabel}`,
+        body: summaryText,
+      });
+      toast.success(`Summary emailed to ${checkIn.teamMember?.email}`);
+    } catch {
+      toast.error("Unable to send the email. Please try again.");
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
   if (!checkIn) return <PageLoading />;
 
   return (
@@ -375,15 +397,28 @@ export default function CheckInForm() {
             </DialogDescription>
           </DialogHeader>
           <div className="relative">
-            <pre className="max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-overlay-subtle p-4 pr-12 font-sans text-sm">
+            <pre className="max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-overlay-subtle p-4 pr-20 font-sans text-sm">
               {summaryText}
             </pre>
-            <IconActionButton
-              label="Copy summary"
-              icon={<Copy />}
-              onClick={handleCopySummary}
-              className="absolute top-2 right-2 bg-card"
-            />
+            <div className="absolute top-2 right-2 flex gap-1">
+              <IconActionButton
+                label={
+                  checkIn.teamMember?.email
+                    ? "Send email"
+                    : "No email on file for this team member"
+                }
+                icon={<Mail />}
+                onClick={handleSendSummaryEmail}
+                disabled={sendingEmail || !checkIn.teamMember?.email}
+                className="bg-card"
+              />
+              <IconActionButton
+                label="Copy summary"
+                icon={<Copy />}
+                onClick={handleCopySummary}
+                className="bg-card"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleSummaryClose}>

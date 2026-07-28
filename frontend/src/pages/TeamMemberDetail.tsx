@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, Copy, Pencil, Trash2, X } from "lucide-react";
+import { Check, Copy, Mail, Pencil, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
 import { CheckIn, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -53,6 +53,7 @@ export default function TeamMemberDetail() {
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [editingPointContent, setEditingPointContent] = useState("");
   const [savingPoint, setSavingPoint] = useState(false);
+  const [sendingSummaryIds, setSendingSummaryIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   const load = useCallback(async (shouldIgnore: () => boolean = () => false) => {
@@ -137,10 +138,9 @@ export default function TeamMemberDetail() {
     }
   }
 
-  async function copyCheckInSummary(c: CheckIn) {
-    if (!member) return;
-    const summary = buildCheckInSummaryText({
-      teamMemberName: member.name,
+  function buildSummaryForCheckIn(c: CheckIn): string {
+    return buildCheckInSummaryText({
+      teamMemberName: member?.name || "",
       date: new Date(c.completedAt || c.scheduledDate),
       wins: c.wins,
       challenges: c.challenges,
@@ -148,8 +148,37 @@ export default function TeamMemberDetail() {
       talkingPoints: c.talkingPoints || [],
       actionItems: c.actionItems,
     });
-    await navigator.clipboard.writeText(summary);
+  }
+
+  async function copyCheckInSummary(c: CheckIn) {
+    if (!member) return;
+    await navigator.clipboard.writeText(buildSummaryForCheckIn(c));
     toast.success("Summary copied to clipboard");
+  }
+
+  async function sendCheckInSummaryEmail(c: CheckIn) {
+    if (!member || sendingSummaryIds.has(c.id)) return;
+    setSendingSummaryIds((ids) => new Set(ids).add(c.id));
+    try {
+      const dateLabel = new Date(c.completedAt || c.scheduledDate).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      await api.post(`/api/check-ins/${c.id}/send-summary`, {
+        subject: `Check-in summary — ${member.name} — ${dateLabel}`,
+        body: buildSummaryForCheckIn(c),
+      });
+      toast.success(`Summary emailed to ${member.email}`);
+    } catch {
+      toast.error("Unable to send the email. Please try again.");
+    } finally {
+      setSendingSummaryIds((ids) => {
+        const next = new Set(ids);
+        next.delete(c.id);
+        return next;
+      });
+    }
   }
 
   if (!member) return <PageLoading />;
@@ -307,11 +336,19 @@ export default function TeamMemberDetail() {
                   </CardTitle>
                   <CardDescription>{timeAgo(date)}</CardDescription>
                 </div>
-                <IconActionButton
-                  label="Copy summary"
-                  icon={<Copy />}
-                  onClick={() => copyCheckInSummary(c)}
-                />
+                <div className="flex items-center gap-1">
+                  <IconActionButton
+                    label={member.email ? "Send email" : "No email on file for this team member"}
+                    icon={<Mail />}
+                    onClick={() => sendCheckInSummaryEmail(c)}
+                    disabled={sendingSummaryIds.has(c.id) || !member.email}
+                  />
+                  <IconActionButton
+                    label="Copy summary"
+                    icon={<Copy />}
+                    onClick={() => copyCheckInSummary(c)}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {hasNarrative && (

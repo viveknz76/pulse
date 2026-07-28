@@ -3,8 +3,14 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { MailerNotConfiguredError, sendCheckInSummaryEmail } from "../utils/mailer";
 
 const router = Router();
+
+const sendSummarySchema = z.object({
+  subject: z.string().min(1),
+  body: z.string().min(1),
+});
 
 const actionItemInput = z.object({
   id: z.string().optional(), // present if updating an existing (e.g. carried-over) item
@@ -273,6 +279,39 @@ router.post("/:id/complete", asyncHandler(async (req, res) => {
 
   const result = await applyCheckInUpdate(checkIn, parsed.data, { complete: true });
   res.json(result);
+}));
+
+// POST /api/check-ins/:id/send-summary
+// Emails the given subject/body to this check-in's team member. The
+// recipient is always derived server-side from the team member relation —
+// never trust a client-supplied "to" — so this can't become an open relay.
+router.post("/:id/send-summary", asyncHandler(async (req, res) => {
+  const parsed = sendSummarySchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const checkIn = await prisma.checkIn.findUnique({
+    where: { id: req.params.id },
+    include: { teamMember: true },
+  });
+  if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
+
+  const recipient = checkIn.teamMember?.email;
+  if (!recipient) {
+    return res.status(400).json({ error: "This team member has no email on file" });
+  }
+
+  try {
+    await sendCheckInSummaryEmail({ to: recipient, subject: parsed.data.subject, text: parsed.data.body });
+  } catch (err) {
+    if (err instanceof MailerNotConfiguredError) {
+      console.error("Email send skipped: SendGrid is not configured");
+      return res.status(503).json({ error: "Email sending is not configured" });
+    }
+    console.error("Failed to send check-in summary email", err);
+    return res.status(502).json({ error: "Failed to send the email. Please try again." });
+  }
+
+  res.status(204).send();
 }));
 
 // DELETE /api/check-ins/:id  — soft delete.
