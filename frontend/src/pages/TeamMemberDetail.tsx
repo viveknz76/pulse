@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Check, Copy, Pencil, Trash2, X } from "lucide-react";
@@ -55,11 +55,26 @@ export default function TeamMemberDetail() {
   const [savingPoint, setSavingPoint] = useState(false);
   const navigate = useNavigate();
 
-  function load() {
-    if (id) api.get<TeamMember>(`/api/team-members/${id}`).then(setMember);
-  }
+  const load = useCallback(async (shouldIgnore: () => boolean = () => false) => {
+    if (!id) return;
 
-  useEffect(load, [id]);
+    try {
+      const nextMember = await api.get<TeamMember>(`/api/team-members/${id}`);
+      if (!shouldIgnore()) setMember(nextMember);
+    } catch {
+      if (!shouldIgnore()) toast.error("Unable to load this team member. Please try again.");
+    }
+  }, [id]);
+
+  useEffect(() => {
+    let ignore = false;
+    setMember(null);
+    void load(() => ignore);
+
+    return () => {
+      ignore = true;
+    };
+  }, [load]);
 
   async function startCheckIn() {
     if (!member) return;
@@ -81,7 +96,7 @@ export default function TeamMemberDetail() {
     try {
       await api.post("/api/talking-points", { teamMemberId: member.id, content: newPoint.trim() });
       setNewPoint("");
-      load();
+      await load();
     } finally {
       setAddingPoint(false);
     }
@@ -89,12 +104,12 @@ export default function TeamMemberDetail() {
 
   async function resolveTalkingPoint(pointId: string) {
     await api.patch(`/api/talking-points/${pointId}`, { resolved: true });
-    load();
+    await load();
   }
 
   async function removeTalkingPoint(pointId: string) {
     await api.delete(`/api/talking-points/${pointId}`);
-    load();
+    await load();
   }
 
   function startEditPoint(pointId: string, content: string) {
@@ -116,7 +131,7 @@ export default function TeamMemberDetail() {
         content: editingPointContent.trim(),
       });
       cancelEditPoint();
-      load();
+      await load();
     } finally {
       setSavingPoint(false);
     }
