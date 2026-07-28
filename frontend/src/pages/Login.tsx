@@ -28,9 +28,9 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="animate-in fade-in slide-in-from-bottom-2 relative min-w-[380px] rounded-[20px] border border-border bg-card px-12 py-14 text-center duration-500">
         <div className="mb-1.5 text-[2.2rem] font-bold tracking-tight text-foreground">Pulse</div>
-        <p className="mb-9 text-[0.95rem] text-muted-foreground">
+        <div className="mb-9 text-[0.95rem] text-muted-foreground">
           Thoughtful check-ins, steady momentum.
-        </p>
+        </div>
         <div className="flex justify-center">
           <GoogleLogin
             onSuccess={handleSuccess}
