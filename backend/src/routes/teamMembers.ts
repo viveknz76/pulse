@@ -3,10 +3,13 @@ import { unlink } from "fs/promises";
 import path from "path";
 import { z } from "zod";
 import { prisma } from "../db";
-import { nextDueDate } from "../utils/cadence";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { AuthedRequest } from "../middleware/auth";
 import { avatarUpload, avatarUploadDir } from "../middleware/avatarUpload";
+import {
+  effectiveNextDueDate,
+  isCheckInScheduleOnHold,
+} from "../utils/checkInHold";
 
 const router = Router();
 
@@ -24,6 +27,11 @@ const createSchema = z.object({
 const updateSchema = createSchema.partial().extend({
   active: z.boolean().optional(),
   avatarSeed: z.string().max(120).nullable().optional(),
+});
+
+const holdSchema = z.object({
+  resumeOn: z.string().datetime(),
+  reason: z.string().trim().min(1).max(160).default("On leave"),
 });
 
 // GET /api/team-members  — list all, each with computed "next due" date.
@@ -61,12 +69,12 @@ router.get("/", asyncHandler(async (_req, res) => {
 
   const withNextDue = members.map((m: (typeof members)[number]) => {
     const lastCompleted = m.checkIns[0];
-    const anchor = lastCompleted ? lastCompleted.scheduledDate : m.startDate;
-    const nextDue = nextDueDate(anchor, m.cadence);
+    const nextDue = effectiveNextDueDate(m, lastCompleted);
     const { checkIns: _checkIns, ...rest } = m;
     return {
       ...rest,
       nextDueDate: nextDue,
+      checkInsOnHold: isCheckInScheduleOnHold(m),
       lastCompletedAt: lastCompleted?.completedAt ?? null,
       activeCheckInId: activeByMember.get(m.id) ?? null,
     };
@@ -113,10 +121,14 @@ router.get("/:id", asyncHandler(async (req, res) => {
   const activeCheckIn = member.checkIns.find(
     (c: (typeof member.checkIns)[number]) => c.status === "SCHEDULED"
   );
-  const anchor = lastCompleted ? lastCompleted.scheduledDate : member.startDate;
-  const nextDue = nextDueDate(anchor, member.cadence);
+  const nextDue = effectiveNextDueDate(member, lastCompleted);
 
-  res.json({ ...member, nextDueDate: nextDue, activeCheckInId: activeCheckIn?.id ?? null });
+  res.json({
+    ...member,
+    nextDueDate: nextDue,
+    checkInsOnHold: isCheckInScheduleOnHold(member),
+    activeCheckInId: activeCheckIn?.id ?? null,
+  });
 }));
 
 // POST /api/team-members
@@ -148,6 +160,58 @@ router.patch("/:id", asyncHandler(async (req, res) => {
       ...(email !== undefined ? { email: email || null } : {}),
       ...(startDate ? { startDate: new Date(startDate) } : {}),
     },
+  });
+  res.json(member);
+}));
+
+// POST /api/team-members/:id/check-in-hold
+// Temporarily pauses this person's check-in schedule. Existing drafts and
+// relationship history are intentionally preserved.
+router.post("/:id/check-in-hold", asyncHandler(async (req, res) => {
+  const parsed = holdSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const resumeOn = new Date(parsed.data.resumeOn);
+  if (resumeOn.getTime() <= Date.now()) {
+    return res.status(400).json({ error: "Return date must be in the future" });
+  }
+
+  const existing = await prisma.teamMember.findUnique({
+    where: { id: req.params.id },
+    select: { deletedAt: true },
+  });
+  if (!existing || existing.deletedAt) {
+    return res.status(404).json({ error: "Team member not found" });
+  }
+
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.id },
+    data: {
+      checkInsPausedAt: new Date(),
+      checkInsResumeOn: resumeOn,
+      checkInsHoldReason: parsed.data.reason,
+    },
+  });
+  res.json(member);
+}));
+
+// POST /api/team-members/:id/check-in-hold/resume
+// Ends a hold immediately and makes the next conversation due now.
+router.post("/:id/check-in-hold/resume", asyncHandler(async (req, res) => {
+  const existing = await prisma.teamMember.findUnique({
+    where: { id: req.params.id },
+    select: { checkInsPausedAt: true, deletedAt: true },
+  });
+  if (!existing || existing.deletedAt) {
+    return res.status(404).json({ error: "Team member not found" });
+  }
+  if (!existing.checkInsPausedAt) {
+    return res.status(409).json({ error: "Check-ins are not on hold" });
+  }
+
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.id },
+    data: { checkInsResumeOn: new Date() },
   });
   res.json(member);
 }));

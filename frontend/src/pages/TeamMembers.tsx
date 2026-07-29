@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { History, Pencil, Trash2, UserCheck, UserMinus } from "lucide-react";
+import { CalendarClock, History, Pencil, Play, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { api } from "../api/client";
 import { Cadence, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -9,6 +9,7 @@ import { PageLoading } from "../components/PageLoading";
 import { PageTitle } from "../components/Typography";
 import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
+import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ export default function TeamMembers() {
   const [submitting, setSubmitting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<TeamMember | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [holdingMember, setHoldingMember] = useState<TeamMember | null>(null);
 
   function load() {
     api.get<TeamMember[]>("/api/team-members").then(setMembers);
@@ -77,6 +79,12 @@ export default function TeamMembers() {
     await api.delete(`/api/team-members/${pendingDelete.id}`);
     toast.success(`${pendingDelete.name} deleted`);
     setPendingDelete(null);
+    load();
+  }
+
+  async function resumeCheckIns(m: TeamMember) {
+    await api.post(`/api/team-members/${m.id}/check-in-hold/resume`);
+    toast.success(`${m.name}'s check-ins resumed`);
     load();
   }
 
@@ -170,10 +178,30 @@ export default function TeamMembers() {
                     </div>
                   </TableCell>
                   <TableCell>{CADENCE_LABELS[m.cadence]}</TableCell>
-                  <TableCell>{new Date(m.nextDueDate).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant={m.deletedAt ? "destructive" : m.active ? "success" : "secondary"}>
-                      {m.deletedAt ? "Deleted" : m.active ? "Active" : "Inactive"}
+                    {m.checkInsOnHold && m.checkInsResumeOn
+                      ? `Returns ${new Date(m.checkInsResumeOn).toLocaleDateString()}`
+                      : new Date(m.nextDueDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        m.deletedAt
+                          ? "destructive"
+                          : m.checkInsOnHold
+                            ? "warning"
+                            : m.active
+                              ? "success"
+                              : "secondary"
+                      }
+                    >
+                      {m.deletedAt
+                        ? "Deleted"
+                        : m.checkInsOnHold
+                          ? m.checkInsHoldReason || "On leave"
+                          : m.active
+                            ? "Active"
+                            : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -204,6 +232,21 @@ export default function TeamMembers() {
                           icon={<Pencil />}
                           onClick={() => setEditingMember(m)}
                         />
+                        {m.active &&
+                          (m.checkInsOnHold ? (
+                            <IconActionButton
+                              label="Resume check-ins now"
+                              icon={<Play />}
+                              variant="primary"
+                              onClick={() => resumeCheckIns(m)}
+                            />
+                          ) : (
+                            <IconActionButton
+                              label="Put check-ins on hold"
+                              icon={<CalendarClock />}
+                              onClick={() => setHoldingMember(m)}
+                            />
+                          ))}
                         <IconActionButton
                           label={m.active ? "Deactivate" : "Reactivate"}
                           icon={m.active ? <UserMinus /> : <UserCheck />}
@@ -251,6 +294,12 @@ export default function TeamMembers() {
         member={editingMember}
         open={!!editingMember}
         onOpenChange={(open) => !open && setEditingMember(null)}
+        onSaved={load}
+      />
+      <CheckInHoldDialog
+        member={holdingMember}
+        open={!!holdingMember}
+        onOpenChange={(open) => !open && setHoldingMember(null)}
         onSaved={load}
       />
     </div>

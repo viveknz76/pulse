@@ -26,20 +26,23 @@ enum ActionItemStatus {
 }
 
 model TeamMember {
-  id          String       @id @default(cuid())
-  name        String
-  role        String?
-  email       String?
-  avatarUrl   String?
-  avatarSeed  String?
-  cadence     Cadence      @default(FORTNIGHTLY)
-  active      Boolean      @default(true)
-  startDate   DateTime     @default(now())
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-  deletedBy   String?
+  id                 String    @id @default(cuid())
+  name               String
+  role               String?
+  email              String?
+  avatarUrl          String?
+  avatarSeed         String?
+  cadence            Cadence   @default(FORTNIGHTLY)
+  active             Boolean   @default(true)
+  startDate          DateTime  @default(now())
+  notes              String?
+  checkInsPausedAt   DateTime?
+  checkInsResumeOn   DateTime?
+  checkInsHoldReason String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  deletedBy          String?
 
   checkIns      CheckIn[]
   actionItems   ActionItem[]
@@ -49,23 +52,23 @@ model TeamMember {
 }
 
 model CheckIn {
-  id            String        @id @default(cuid())
-  teamMember    TeamMember    @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
-  teamMemberId  String
+  id           String     @id @default(cuid())
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  teamMemberId String
 
   scheduledDate DateTime
   completedAt   DateTime?
   status        CheckInStatus @default(SCHEDULED)
 
-  wins          String?
-  challenges    String?
-  decisions     String?
-  growthNotes   String?
-  energyLevel   Int?
+  wins        String?
+  challenges  String?
+  decisions   String?
+  growthNotes String?
+  energyLevel Int?
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   actionItems   ActionItem[]
   talkingPoints TalkingPoint[]
@@ -75,25 +78,25 @@ model CheckIn {
 }
 
 model ActionItem {
-  id             String            @id @default(cuid())
-  description    String
-  status         ActionItemStatus  @default(OPEN)
-  dueDate        DateTime?
-  completedAt    DateTime?
+  id          String           @id @default(cuid())
+  description String
+  status      ActionItemStatus @default(OPEN)
+  dueDate     DateTime?
+  completedAt DateTime?
 
-  teamMember     TeamMember        @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
-  teamMemberId   String
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  teamMemberId String
 
-  checkIn        CheckIn?          @relation(fields: [checkInId], references: [id], onDelete: SetNull)
-  checkInId      String?
+  checkIn   CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  checkInId String?
 
-  carriedOverFrom   ActionItem?    @relation("CarryOver", fields: [carriedOverFromId], references: [id])
-  carriedOverFromId String?        @unique
-  carriedOverTo     ActionItem?    @relation("CarryOver")
+  carriedOverFrom   ActionItem? @relation("CarryOver", fields: [carriedOverFromId], references: [id])
+  carriedOverFromId String?     @unique
+  carriedOverTo     ActionItem? @relation("CarryOver")
 
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  deletedAt      DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([teamMemberId, status])
   @@index([dueDate])
@@ -117,8 +120,8 @@ model TalkingPoint {
   checkIn   CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
   checkInId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([teamMemberId, resolved])

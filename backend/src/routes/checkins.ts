@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { MailerNotConfiguredError, sendCheckInSummaryEmail } from "../utils/mailer";
 import { shouldCreateRecurringSuccessor } from "../utils/talkingPointRecurrence";
+import { isCheckInScheduleOnHold } from "../utils/checkInHold";
 
 const router = Router();
 
@@ -299,6 +300,27 @@ router.get("/:id", asyncHandler(async (req, res) => {
 router.post("/", asyncHandler(async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const member = await prisma.teamMember.findUnique({
+    where: { id: parsed.data.teamMemberId },
+    select: {
+      active: true,
+      deletedAt: true,
+      checkInsPausedAt: true,
+      checkInsResumeOn: true,
+    },
+  });
+  if (!member || member.deletedAt) {
+    return res.status(404).json({ error: "Team member not found" });
+  }
+  if (!member.active) {
+    return res.status(409).json({ error: "This team member is inactive" });
+  }
+  if (isCheckInScheduleOnHold(member)) {
+    return res.status(409).json({
+      error: "Check-ins are on hold until this team member returns",
+    });
+  }
 
   const existing = await prisma.checkIn.findFirst({
     where: { teamMemberId: parsed.data.teamMemberId, status: "SCHEDULED", deletedAt: null },

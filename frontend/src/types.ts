@@ -13,6 +13,10 @@ export interface TeamMember {
   active: boolean;
   startDate: string;
   notes?: string | null;
+  checkInsPausedAt?: string | null;
+  checkInsResumeOn?: string | null;
+  checkInsHoldReason?: string | null;
+  checkInsOnHold: boolean;
   nextDueDate: string;
   lastCompletedAt?: string | null;
   activeCheckInId?: string | null;

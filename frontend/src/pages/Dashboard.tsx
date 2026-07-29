@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
+  CalendarClock,
   CheckCircle2,
   Clock3,
   LockKeyhole,
@@ -113,16 +114,20 @@ export default function Dashboard() {
   if (!members || !wins) return <PageLoading />;
 
   const active = members.filter((m) => m.active && !m.deletedAt);
-  const due = active
+  const onHold = active.filter((m) => m.checkInsOnHold);
+  const scheduled = active.filter((m) => !m.checkInsOnHold);
+  const due = scheduled
     .filter((m) => daysUntil(m.nextDueDate) <= 3)
     .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
-  const upcoming = active
+  const upcoming = scheduled
     .filter((m) => daysUntil(m.nextDueDate) > 3)
     .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
   const overdue = due.filter((m) => isOverdue(m.nextDueDate));
-  const inProgress = active.filter((m) => !!m.activeCheckInId);
-  const onTrack = active.filter((m) => !isOverdue(m.nextDueDate));
-  const rhythmPercent = active.length ? Math.round((onTrack.length / active.length) * 100) : 100;
+  const inProgress = scheduled.filter((m) => !!m.activeCheckInId);
+  const onTrack = scheduled.filter((m) => !isOverdue(m.nextDueDate));
+  const rhythmPercent = scheduled.length
+    ? Math.round((onTrack.length / scheduled.length) * 100)
+    : 100;
   const nextConversation = due[0];
 
   const todayLabel = new Date().toLocaleDateString("en-US", {
@@ -245,7 +250,7 @@ export default function Dashboard() {
               />
               <MomentumMetric
                 icon={<CheckCircle2 className="size-4" />}
-                value={active.length ? `${onTrack.length}/${active.length}` : "—"}
+                value={scheduled.length ? `${onTrack.length}/${scheduled.length}` : "—"}
                 label="On schedule"
               />
             </div>
@@ -416,6 +421,44 @@ export default function Dashboard() {
             ))}
           </div>
         </>
+      )}
+
+      {onHold.length > 0 && (
+        <section className="mt-10" aria-label="Team members on leave">
+          <div className="mb-3 flex items-center gap-2">
+            <CalendarClock className="size-4 text-muted-foreground" />
+            <SectionLabel className="mb-0">
+              On leave ({onHold.length})
+            </SectionLabel>
+          </div>
+          <Card className="divide-y divide-border px-5">
+            {onHold.map((member) => (
+              <div key={member.id} className="flex items-center gap-3 py-3.5">
+                <MemberAvatar
+                  id={member.id}
+                  name={member.name}
+                  avatarUrl={member.avatarUrl}
+                  avatarSeed={member.avatarSeed}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/team/${member.id}`}
+                    className="text-sm font-semibold hover:text-primary"
+                  >
+                    {member.name}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    {member.checkInsHoldReason || "On leave"}
+                    {member.checkInsResumeOn &&
+                      ` · Returns ${new Date(member.checkInsResumeOn).toLocaleDateString()}`}
+                  </p>
+                </div>
+                <Badge variant="warning">Check-ins paused</Badge>
+              </div>
+            ))}
+          </Card>
+        </section>
       )}
 
     </div>

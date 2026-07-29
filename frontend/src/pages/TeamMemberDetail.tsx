@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, Copy, Mail, Pencil, Repeat2, Trash2, X } from "lucide-react";
+import { CalendarClock, Check, Copy, Mail, Pencil, Play, Repeat2, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
 import { CheckIn, TalkingPoint, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -11,6 +11,7 @@ import { StatusDot } from "../components/StatusDot";
 import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
+import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,6 +56,7 @@ export default function TeamMemberDetail() {
   const [newPointRecurring, setNewPointRecurring] = useState(false);
   const [addingPoint, setAddingPoint] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [holding, setHolding] = useState(false);
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [editingPointContent, setEditingPointContent] = useState("");
   const [editingPointRecurring, setEditingPointRecurring] = useState(false);
@@ -105,6 +107,13 @@ export default function TeamMemberDetail() {
       scheduledDate: new Date().toISOString(),
     });
     navigate(`/check-ins/${checkIn.id}`);
+  }
+
+  async function resumeCheckIns() {
+    if (!member) return;
+    await api.post(`/api/team-members/${member.id}/check-in-hold/resume`);
+    toast.success(`${member.name}'s check-ins resumed`);
+    await load();
   }
 
   async function addTalkingPoint(e: FormEvent) {
@@ -247,11 +256,43 @@ export default function TeamMemberDetail() {
           <Button variant="outline" onClick={() => setEditing(true)}>
             Edit
           </Button>
-          <Button onClick={startCheckIn}>
-            {member.activeCheckInId ? "Resume check-in" : "Start check-in"}
-          </Button>
+          {member.checkInsOnHold ? (
+            <Button onClick={resumeCheckIns}>
+              <Play />
+              Resume check-ins now
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setHolding(true)}>
+                <CalendarClock />
+                Put on hold
+              </Button>
+              <Button onClick={startCheckIn}>
+                {member.activeCheckInId ? "Resume check-in" : "Start check-in"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {member.checkInsOnHold && (
+        <Card className="mb-8 border-warning/30 bg-[var(--warning-tint)] p-4">
+          <div className="flex items-start gap-3">
+            <CalendarClock className="mt-0.5 size-5 shrink-0 text-[var(--warning-text)]" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Check-ins are on hold · {member.checkInsHoldReason || "On leave"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {member.checkInsResumeOn
+                  ? `The next check-in will become due on ${new Date(member.checkInsResumeOn).toLocaleDateString()}.`
+                  : "Check-ins will remain paused until you resume them."}
+                {" "}Talking points, actions, and any unfinished check-in are safe.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {member.notes && (
         <Card className="mb-8 p-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
@@ -512,6 +553,12 @@ export default function TeamMemberDetail() {
         member={member}
         open={editing}
         onOpenChange={setEditing}
+        onSaved={load}
+      />
+      <CheckInHoldDialog
+        member={member}
+        open={holding}
+        onOpenChange={setHolding}
         onSaved={load}
       />
     </div>

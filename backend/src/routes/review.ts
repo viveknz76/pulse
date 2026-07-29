@@ -1,8 +1,12 @@
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { currentWeekRange, nextDueDate } from "../utils/cadence";
+import { currentWeekRange } from "../utils/cadence";
 import { asyncHandler } from "../middleware/asyncHandler";
+import {
+  effectiveNextDueDate,
+  isCheckInScheduleOnHold,
+} from "../utils/checkInHold";
 
 const router = Router();
 
@@ -82,10 +86,10 @@ router.get("/", asyncHandler(async (_req, res) => {
   });
 
   const checkInsDueThisWeek = members
+    .filter((m: (typeof members)[number]) => !isCheckInScheduleOnHold(m))
     .map((m: (typeof members)[number]) => {
       const lastCompleted = m.checkIns[0];
-      const anchor = lastCompleted ? lastCompleted.scheduledDate : m.startDate;
-      const due = nextDueDate(anchor, m.cadence);
+      const due = effectiveNextDueDate(m, lastCompleted);
       return { teamMember: m, nextDueDate: due };
     })
     .filter((x: { nextDueDate: Date }) => x.nextDueDate >= start && x.nextDueDate <= end);
