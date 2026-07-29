@@ -105,6 +105,11 @@ model TalkingPoint {
   content    String
   resolved   Boolean   @default(false)
   resolvedAt DateTime?
+  recurring  Boolean   @default(false)
+
+  renewedFrom   TalkingPoint? @relation("TalkingPointRenewal", fields: [renewedFromId], references: [id])
+  renewedFromId String?       @unique
+  renewedTo     TalkingPoint? @relation("TalkingPointRenewal")
 
   teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
   teamMemberId String

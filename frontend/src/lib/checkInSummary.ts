@@ -11,6 +11,7 @@ export const ACTION_ITEM_STATUS_LABEL: Record<ActionItemStatus, string> = {
 interface SummaryTalkingPoint {
   content: string;
   resolved: boolean;
+  recurring?: boolean;
 }
 
 interface SummaryActionItem {
@@ -81,7 +82,10 @@ export function buildCheckInSummaryText({
   if (activePoints.length === 0) {
     lines.push("—");
   } else {
-    activePoints.forEach((p) => lines.push(`- [${p.resolved ? "x" : " "}] ${p.content.trim()}`));
+    activePoints.forEach((p) => {
+      const recurring = p.recurring ? " (every check-in)" : "";
+      lines.push(`- [${p.resolved ? "x" : " "}] ${p.content.trim()}${recurring}`);
+    });
   }
   lines.push("");
 
