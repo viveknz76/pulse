@@ -51,6 +51,7 @@ export interface TalkingPoint {
   content: string;
   resolved: boolean;
   resolvedAt?: string | null;
+  recurring: boolean;
   teamMemberId: string;
   checkInId?: string | null;
   createdAt: string;

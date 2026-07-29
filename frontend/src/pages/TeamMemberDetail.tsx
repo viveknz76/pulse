@@ -1,9 +1,9 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, Copy, Mail, Pencil, Trash2, X } from "lucide-react";
+import { Check, Copy, Mail, Pencil, Repeat2, Trash2, X } from "lucide-react";
 import { api } from "../api/client";
-import { CheckIn, TeamMember } from "../types";
+import { CheckIn, TalkingPoint, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
@@ -12,6 +12,8 @@ import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -50,10 +52,12 @@ export default function TeamMemberDetail() {
   const { id } = useParams<{ id: string }>();
   const [member, setMember] = useState<TeamMember | null>(null);
   const [newPoint, setNewPoint] = useState("");
+  const [newPointRecurring, setNewPointRecurring] = useState(false);
   const [addingPoint, setAddingPoint] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [editingPointContent, setEditingPointContent] = useState("");
+  const [editingPointRecurring, setEditingPointRecurring] = useState(false);
   const [savingPoint, setSavingPoint] = useState(false);
   const [sendingSummaryIds, setSendingSummaryIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
@@ -108,16 +112,26 @@ export default function TeamMemberDetail() {
     if (!member || !newPoint.trim()) return;
     setAddingPoint(true);
     try {
-      await api.post("/api/talking-points", { teamMemberId: member.id, content: newPoint.trim() });
+      await api.post("/api/talking-points", {
+        teamMemberId: member.id,
+        content: newPoint.trim(),
+        recurring: newPointRecurring,
+      });
       setNewPoint("");
+      setNewPointRecurring(false);
       await load();
     } finally {
       setAddingPoint(false);
     }
   }
 
-  async function resolveTalkingPoint(pointId: string) {
-    await api.patch(`/api/talking-points/${pointId}`, { resolved: true });
+  async function resolveTalkingPoint(point: TalkingPoint) {
+    await api.patch(`/api/talking-points/${point.id}`, { resolved: true });
+    toast.success(
+      point.recurring
+        ? "Discussed — queued again for the next check-in."
+        : "Talking point marked as discussed."
+    );
     await load();
   }
 
@@ -126,14 +140,16 @@ export default function TeamMemberDetail() {
     await load();
   }
 
-  function startEditPoint(pointId: string, content: string) {
+  function startEditPoint(pointId: string, content: string, recurring: boolean) {
     setEditingPointId(pointId);
     setEditingPointContent(content);
+    setEditingPointRecurring(recurring);
   }
 
   function cancelEditPoint() {
     setEditingPointId(null);
     setEditingPointContent("");
+    setEditingPointRecurring(false);
   }
 
   async function saveEditPoint(e: FormEvent) {
@@ -143,6 +159,7 @@ export default function TeamMemberDetail() {
     try {
       await api.patch(`/api/talking-points/${editingPointId}`, {
         content: editingPointContent.trim(),
+        recurring: editingPointRecurring,
       });
       cancelEditPoint();
       await load();
@@ -243,16 +260,25 @@ export default function TeamMemberDetail() {
       )}
 
       <SectionLabel>Talking points ({openTalkingPoints.length})</SectionLabel>
-      <form className="mb-4 flex gap-2.5" onSubmit={addTalkingPoint}>
-        <Input
-          className="flex-1"
-          placeholder="Something to bring up next check-in…"
-          value={newPoint}
-          onChange={(e) => setNewPoint(e.target.value)}
-        />
-        <Button type="submit" disabled={addingPoint || !newPoint.trim()}>
-          Add
-        </Button>
+      <form className="mb-4 rounded-xl bg-muted/45 p-3" onSubmit={addTalkingPoint}>
+        <div className="flex gap-2.5">
+          <Input
+            className="flex-1 bg-card"
+            placeholder="Something to bring up next check-in…"
+            value={newPoint}
+            onChange={(e) => setNewPoint(e.target.value)}
+          />
+          <Button type="submit" disabled={addingPoint || !newPoint.trim()}>
+            Add
+          </Button>
+        </div>
+        <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={newPointRecurring}
+            onCheckedChange={(checked) => setNewPointRecurring(checked === true)}
+          />
+          Repeat every check-in
+        </label>
       </form>
       {openTalkingPoints.length === 0 && (
         <p className="text-sm text-muted-foreground">No talking points queued up.</p>
@@ -262,22 +288,31 @@ export default function TeamMemberDetail() {
           {openTalkingPoints.map((t) =>
             editingPointId === t.id ? (
               <li key={t.id} className="border-b border-border py-3.5 last:border-b-0">
-                <form className="flex items-center gap-2.5" onSubmit={saveEditPoint}>
-                  <StatusDot status="OPEN" />
-                  <Input
-                    autoFocus
-                    className="flex-1"
-                    value={editingPointContent}
-                    onChange={(e) => setEditingPointContent(e.target.value)}
-                  />
-                  <IconActionButton
-                    label="Save"
-                    icon={<Check />}
-                    type="submit"
-                    variant="success"
-                    disabled={savingPoint || !editingPointContent.trim()}
-                  />
-                  <IconActionButton label="Cancel" icon={<X />} onClick={cancelEditPoint} />
+                <form className="grid gap-2" onSubmit={saveEditPoint}>
+                  <div className="flex items-center gap-2.5">
+                    <StatusDot status="OPEN" />
+                    <Input
+                      autoFocus
+                      className="flex-1"
+                      value={editingPointContent}
+                      onChange={(e) => setEditingPointContent(e.target.value)}
+                    />
+                    <IconActionButton
+                      label="Save"
+                      icon={<Check />}
+                      type="submit"
+                      variant="success"
+                      disabled={savingPoint || !editingPointContent.trim()}
+                    />
+                    <IconActionButton label="Cancel" icon={<X />} onClick={cancelEditPoint} />
+                  </div>
+                  <label className="ml-5 flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={editingPointRecurring}
+                      onCheckedChange={(checked) => setEditingPointRecurring(checked === true)}
+                    />
+                    Repeat every check-in
+                  </label>
                 </form>
               </li>
             ) : (
@@ -287,16 +322,26 @@ export default function TeamMemberDetail() {
               >
                 <StatusDot status="OPEN" />
                 <span className="flex-1">{t.content}</span>
+                {t.recurring && (
+                  <Badge variant="secondary">
+                    <Repeat2 />
+                    Every check-in
+                  </Badge>
+                )}
                 <IconActionButton
                   label="Edit"
                   icon={<Pencil />}
-                  onClick={() => startEditPoint(t.id, t.content)}
+                  onClick={() => startEditPoint(t.id, t.content, t.recurring)}
                 />
                 <IconActionButton
-                  label="Mark discussed"
+                  label={
+                    t.recurring
+                      ? "Mark discussed and repeat next check-in"
+                      : "Mark discussed"
+                  }
                   icon={<Check />}
                   variant="primary"
-                  onClick={() => resolveTalkingPoint(t.id)}
+                  onClick={() => resolveTalkingPoint(t)}
                 />
                 <IconActionButton
                   label="Remove"
@@ -418,6 +463,12 @@ export default function TeamMemberDetail() {
                               <span className={cn("flex-1", !t.resolved && "text-muted-foreground")}>
                                 {t.content}
                               </span>
+                              {t.recurring && (
+                                <Badge variant="secondary">
+                                  <Repeat2 />
+                                  Every check-in
+                                </Badge>
+                              )}
                             </div>
                           ))}
                         </div>

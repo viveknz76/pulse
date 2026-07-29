@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { MailerNotConfiguredError, sendCheckInSummaryEmail } from "../utils/mailer";
+import { shouldCreateRecurringSuccessor } from "../utils/talkingPointRecurrence";
 
 const router = Router();
 
@@ -23,6 +24,7 @@ const talkingPointInput = z.object({
   id: z.string().optional(), // present if updating an existing (e.g. carried-over) point
   content: z.string().min(1),
   resolved: z.boolean().default(false),
+  recurring: z.boolean().default(false),
 });
 
 const createSchema = z.object({
@@ -157,31 +159,60 @@ async function applyCheckInUpdate(
     }
 
     for (const point of talkingPoints) {
+      let savedPointId: string;
+      let successorExists = false;
+
       if (point.id) {
-        const existing = await tx.talkingPoint.findUnique({ where: { id: point.id } });
+        const existing = await tx.talkingPoint.findUnique({
+          where: { id: point.id },
+          include: { renewedTo: true },
+        });
         if (!existing || existing.teamMemberId !== checkIn.teamMemberId || existing.deletedAt) {
           throw new Error(`Talking point ${point.id} does not belong to this team member`);
         }
 
-        await tx.talkingPoint.update({
+        const savedPoint = await tx.talkingPoint.update({
           where: { id: existing.id },
           data: {
             content: point.content,
             resolved: point.resolved,
             resolvedAt: point.resolved ? new Date() : null,
+            recurring: point.recurring,
             // Attach previously unassigned points to their first check-in, but
             // never move a point away from an earlier historical check-in.
             ...(existing.checkInId === null ? { checkInId: checkIn.id } : {}),
           },
         });
+        savedPointId = savedPoint.id;
+        successorExists = !!existing.renewedTo;
       } else {
-        await tx.talkingPoint.create({
+        const savedPoint = await tx.talkingPoint.create({
           data: {
             content: point.content,
             resolved: point.resolved,
             resolvedAt: point.resolved ? new Date() : null,
+            recurring: point.recurring,
             teamMemberId: checkIn.teamMemberId,
             checkInId: checkIn.id,
+          },
+        });
+        savedPointId = savedPoint.id;
+      }
+
+      if (
+        shouldCreateRecurringSuccessor({
+          finalizingOccurrence: complete,
+          recurring: point.recurring,
+          resolved: point.resolved,
+          successorExists,
+        })
+      ) {
+        await tx.talkingPoint.create({
+          data: {
+            content: point.content,
+            recurring: true,
+            teamMemberId: checkIn.teamMemberId,
+            renewedFromId: savedPointId,
           },
         });
       }

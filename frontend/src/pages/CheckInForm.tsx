@@ -10,6 +10,7 @@ import {
   ListChecks,
   Mail,
   MessagesSquare,
+  Repeat2,
   Save,
   Sparkles,
   Trash2,
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
@@ -52,6 +54,7 @@ interface DraftTalkingPoint {
   id?: string; // set when this is an existing (e.g. carried-over) talking point
   content: string;
   resolved: boolean;
+  recurring: boolean;
 }
 
 function toDateInput(value?: string | null): string {
@@ -219,6 +222,7 @@ export default function CheckInForm() {
         id: t.id,
         content: t.content,
         resolved: t.resolved,
+        recurring: t.recurring,
       }))
     );
     setDeletedActionItemIds([]);
@@ -260,7 +264,10 @@ export default function CheckInForm() {
   }
 
   function addPoint() {
-    setPoints((current) => [...current, { content: "", resolved: false }]);
+    setPoints((current) => [
+      ...current,
+      { content: "", resolved: false, recurring: false },
+    ]);
   }
 
   function updatePoint(index: number, patch: Partial<DraftTalkingPoint>) {
@@ -311,7 +318,12 @@ export default function CheckInForm() {
         })),
       talkingPoints: points
         .filter((p) => p.content.trim())
-        .map((p) => ({ id: p.id, content: p.content.trim(), resolved: p.resolved })),
+        .map((p) => ({
+          id: p.id,
+          content: p.content.trim(),
+          resolved: p.resolved,
+          recurring: p.recurring,
+        })),
       deletedActionItemIds,
       deletedTalkingPointIds,
     };
@@ -422,25 +434,49 @@ export default function CheckInForm() {
             {points.map((point, index) => (
               <div
                 key={point.id ?? `new-point-${index}`}
-                className="mb-2.5 flex items-center gap-2"
+                className="mb-2.5 rounded-xl bg-muted/45 p-3"
               >
-                <Checkbox
-                  checked={point.resolved}
-                  onCheckedChange={(checked) => updatePoint(index, { resolved: checked === true })}
-                  aria-label={`Mark “${point.content || "talking point"}” as discussed`}
-                />
-                <Input
-                  className={cn("flex-1", point.resolved && "text-muted-foreground line-through")}
-                  placeholder="Something worth talking about"
-                  value={point.content}
-                  onChange={(e) => updatePoint(index, { content: e.target.value })}
-                />
-                <IconActionButton
-                  label="Remove talking point"
-                  icon={<Trash2 />}
-                  variant="danger"
-                  onClick={() => removePoint(index)}
-                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={point.resolved}
+                    onCheckedChange={(checked) =>
+                      updatePoint(index, { resolved: checked === true })
+                    }
+                    aria-label={`Mark “${point.content || "talking point"}” as discussed`}
+                  />
+                  <Input
+                    className={cn(
+                      "flex-1 bg-card",
+                      point.resolved && "text-muted-foreground line-through"
+                    )}
+                    placeholder="Something worth talking about"
+                    value={point.content}
+                    onChange={(e) => updatePoint(index, { content: e.target.value })}
+                  />
+                  <IconActionButton
+                    label="Remove talking point"
+                    icon={<Trash2 />}
+                    variant="danger"
+                    onClick={() => removePoint(index)}
+                  />
+                </div>
+                <div className="mt-2 flex min-h-5 items-center justify-between gap-3 pl-6">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={point.recurring}
+                      onCheckedChange={(checked) =>
+                        updatePoint(index, { recurring: checked === true })
+                      }
+                    />
+                    Repeat every check-in
+                  </label>
+                  {point.recurring && point.resolved && (
+                    <Badge variant="secondary">
+                      <Repeat2 />
+                      Returns next check-in
+                    </Badge>
+                  )}
+                </div>
               </div>
             ))}
             <Button type="button" variant="outline" onClick={addPoint}>
@@ -584,7 +620,10 @@ export default function CheckInForm() {
               label="Talking points"
               value={points
                 .filter((point) => point.content.trim())
-                .map((point) => `${point.resolved ? "✓" : "○"} ${point.content.trim()}`)
+                .map(
+                  (point) =>
+                    `${point.resolved ? "✓" : "○"} ${point.content.trim()}${point.recurring ? " · every check-in" : ""}`
+                )
                 .join("\n")}
               onEdit={() => moveToStep(1)}
             />
