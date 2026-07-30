@@ -8,6 +8,7 @@ const router = Router();
 const updateSchema = z.object({
   description: z.string().min(1).optional(),
   status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]).optional(),
+  owner: z.enum(["MANAGER", "TEAM_MEMBER", "SHARED"]).optional(),
   dueDate: z.string().datetime().optional().nullable(),
 });
 
@@ -68,6 +69,7 @@ router.post("/:id/carry-over", asyncHandler(async (req, res) => {
     data: {
       description: original.description,
       status: "OPEN",
+      owner: original.owner,
       dueDate: original.dueDate,
       teamMemberId: original.teamMemberId,
       carriedOverFromId: original.id,

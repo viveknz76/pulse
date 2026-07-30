@@ -25,6 +25,12 @@ enum ActionItemStatus {
   DONE
 }
 
+enum ActionItemOwner {
+  MANAGER
+  TEAM_MEMBER
+  SHARED
+}
+
 model TeamMember {
   id                 String    @id @default(cuid())
   name               String
@@ -81,6 +87,7 @@ model ActionItem {
   id          String           @id @default(cuid())
   description String
   status      ActionItemStatus @default(OPEN)
+  owner       ActionItemOwner  @default(SHARED)
   dueDate     DateTime?
   completedAt DateTime?
 

@@ -1,0 +1,4 @@
+CREATE TYPE "ActionItemOwner" AS ENUM ('MANAGER', 'TEAM_MEMBER', 'SHARED');
+
+ALTER TABLE "ActionItem"
+ADD COLUMN "owner" "ActionItemOwner" NOT NULL DEFAULT 'SHARED';

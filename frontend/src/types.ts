@@ -1,6 +1,7 @@
 export type Cadence = "WEEKLY" | "FORTNIGHTLY" | "MONTHLY";
 export type CheckInStatus = "SCHEDULED" | "COMPLETED" | "SKIPPED";
 export type ActionItemStatus = "OPEN" | "IN_PROGRESS" | "DONE";
+export type ActionItemOwner = "MANAGER" | "TEAM_MEMBER" | "SHARED";
 
 export interface TeamMember {
   id: string;
@@ -65,6 +66,7 @@ export interface ActionItem {
   id: string;
   description: string;
   status: ActionItemStatus;
+  owner: ActionItemOwner;
   dueDate?: string | null;
   completedAt?: string | null;
   teamMemberId: string;

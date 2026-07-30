@@ -1,6 +1,7 @@
 import { format, parse } from "date-fns";
-import { ActionItemStatus } from "@/types";
+import { ActionItemOwner, ActionItemStatus } from "@/types";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { actionItemOwnerLabel } from "@/lib/actionItemOwnership";
 
 export const ACTION_ITEM_STATUS_LABEL: Record<ActionItemStatus, string> = {
   OPEN: "Open",
@@ -17,6 +18,7 @@ interface SummaryTalkingPoint {
 interface SummaryActionItem {
   description: string;
   status: ActionItemStatus;
+  owner: ActionItemOwner;
   dueDate?: string | null;
 }
 
@@ -96,7 +98,10 @@ export function buildCheckInSummaryText({
   } else {
     activeItems.forEach((it) => {
       const due = it.dueDate ? ` (due ${formatDueDate(it.dueDate)})` : "";
-      lines.push(`- [${ACTION_ITEM_STATUS_LABEL[it.status]}] ${it.description.trim()}${due}`);
+      const owner = actionItemOwnerLabel(it.owner, teamMemberName);
+      lines.push(
+        `- [${ACTION_ITEM_STATUS_LABEL[it.status]}] ${it.description.trim()} — ${owner}${due}`
+      );
     });
   }
 

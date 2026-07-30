@@ -32,6 +32,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { actionItemOwnerLabel } from "@/lib/actionItemOwnership";
 
 function timeAgo(dateStr: string): string {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
@@ -422,6 +423,9 @@ export default function TeamMemberDetail() {
             >
               <StatusDot status={a.status} />
               <span className="flex-1">{a.description}</span>
+              <Badge variant="secondary">
+                {actionItemOwnerLabel(a.owner, member.name)}
+              </Badge>
               {a.dueDate && (
                 <span className="text-sm text-muted-foreground">
                   due {new Date(a.dueDate).toLocaleDateString()}
@@ -437,7 +441,7 @@ export default function TeamMemberDetail() {
         <p className="mb-5 text-sm text-muted-foreground">
           The moments shaping your work together—wins, decisions, growth, and commitments.
         </p>
-        <RelationshipTimeline checkIns={completedCheckIns} />
+        <RelationshipTimeline checkIns={completedCheckIns} teamMemberName={member.name} />
 
         <SectionLabel>Detailed check-in history</SectionLabel>
         {completedCheckIns.length === 0 && (
@@ -544,6 +548,9 @@ export default function TeamMemberDetail() {
                             <div key={a.id} className="flex items-center gap-2 text-[0.92rem]">
                               <StatusDot status={a.status} />
                               <span className="flex-1">{a.description}</span>
+                              <Badge variant="secondary">
+                                {actionItemOwnerLabel(a.owner, member.name)}
+                              </Badge>
                               {a.dueDate && (
                                 <span className="text-xs text-muted-foreground">
                                   due {new Date(a.dueDate).toLocaleDateString()}

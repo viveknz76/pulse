@@ -3,6 +3,7 @@ import { CheckCircle2, ListChecks, TrendingUp, Trophy } from "lucide-react";
 import type { CheckIn } from "@/types";
 import { ENERGY_COLORS } from "@/lib/energyPalette";
 import { StatusDot } from "@/components/StatusDot";
+import { actionItemOwnerLabel } from "@/lib/actionItemOwnership";
 
 interface MomentStyle {
   label: string;
@@ -56,7 +57,13 @@ function NarrativeMoment({
   );
 }
 
-export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
+export function RelationshipTimeline({
+  checkIns,
+  teamMemberName,
+}: {
+  checkIns: CheckIn[];
+  teamMemberName?: string;
+}) {
   const moments = [...checkIns]
     .filter(
       (checkIn) =>
@@ -154,11 +161,11 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
                             </span>
                             <div className="min-w-0 flex-1">
                               <p className="leading-relaxed">{item.description}</p>
-                              {item.dueDate && (
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                  Due {new Date(item.dueDate).toLocaleDateString()}
-                                </p>
-                              )}
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {actionItemOwnerLabel(item.owner, teamMemberName)}
+                                {item.dueDate &&
+                                  ` · Due ${new Date(item.dueDate).toLocaleDateString()}`}
+                              </p>
                             </div>
                           </li>
                         ))}

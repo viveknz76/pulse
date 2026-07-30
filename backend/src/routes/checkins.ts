@@ -18,6 +18,7 @@ const actionItemInput = z.object({
   id: z.string().optional(), // present if updating an existing (e.g. carried-over) item
   description: z.string().min(1),
   status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]).default("OPEN"),
+  owner: z.enum(["MANAGER", "TEAM_MEMBER", "SHARED"]).default("SHARED"),
   dueDate: z.string().datetime().optional().nullable(),
 });
 
@@ -117,6 +118,7 @@ async function applyCheckInUpdate(
         const itemData = {
           description: item.description,
           status: item.status,
+          owner: item.owner,
           dueDate: item.dueDate ? new Date(item.dueDate) : null,
           completedAt: item.status === "DONE" ? new Date() : null,
         };
@@ -154,6 +156,7 @@ async function applyCheckInUpdate(
           data: {
             description: item.description,
             status: item.status,
+            owner: item.owner,
             dueDate: item.dueDate ? new Date(item.dueDate) : null,
             completedAt: item.status === "DONE" ? new Date() : null,
             teamMemberId: checkIn.teamMemberId,

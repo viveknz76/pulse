@@ -18,7 +18,13 @@ import {
   Waypoints,
 } from "lucide-react";
 import { api } from "../api/client";
-import { ActionItem, ActionItemStatus, CheckIn, TalkingPoint } from "../types";
+import {
+  ActionItem,
+  ActionItemOwner,
+  ActionItemStatus,
+  CheckIn,
+  TalkingPoint,
+} from "../types";
 import { PageTitle } from "../components/Typography";
 import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
@@ -44,11 +50,13 @@ import {
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { actionItemOwnerLabel } from "@/lib/actionItemOwnership";
 
 interface DraftActionItem {
   id?: string; // set when this is an existing action item being carried over/edited
   description: string;
   status: ActionItemStatus;
+  owner: ActionItemOwner;
   dueDate: string; // yyyy-mm-dd for the <input type="date">
 }
 
@@ -211,6 +219,7 @@ export default function CheckInForm() {
         id: a.id,
         description: a.description,
         status: a.status,
+        owner: a.owner,
         dueDate: toDateInput(a.dueDate),
       }))
     );
@@ -249,7 +258,10 @@ export default function CheckInForm() {
   }, [loadCheckIn]);
 
   function addItem() {
-    setItems((current) => [...current, { description: "", status: "OPEN", dueDate: "" }]);
+    setItems((current) => [
+      ...current,
+      { description: "", status: "OPEN", owner: "SHARED", dueDate: "" },
+    ]);
   }
 
   function updateItem(index: number, patch: Partial<DraftActionItem>) {
@@ -317,6 +329,7 @@ export default function CheckInForm() {
           id: it.id,
           description: it.description.trim(),
           status: it.status,
+          owner: it.owner,
           dueDate: it.dueDate ? new Date(it.dueDate).toISOString() : null,
         })),
       talkingPoints: points
@@ -591,7 +604,7 @@ export default function CheckInForm() {
                     onClick={() => removeItem(index)}
                   />
                 </div>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
                   <Select
                     value={item.status}
                     onValueChange={(value) =>
@@ -605,6 +618,23 @@ export default function CheckInForm() {
                       <SelectItem value="OPEN">Open</SelectItem>
                       <SelectItem value="IN_PROGRESS">In progress</SelectItem>
                       <SelectItem value="DONE">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={item.owner}
+                    onValueChange={(value) =>
+                      updateItem(index, { owner: value as ActionItemOwner })
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-card" aria-label="Commitment owner">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MANAGER">Me</SelectItem>
+                      <SelectItem value="TEAM_MEMBER">
+                        {checkIn.teamMember?.name || "Team member"}
+                      </SelectItem>
+                      <SelectItem value="SHARED">Shared</SelectItem>
                     </SelectContent>
                   </Select>
                   <DatePicker
@@ -654,7 +684,13 @@ export default function CheckInForm() {
                 label="Commitments"
                 value={items
                   .filter((item) => item.description.trim())
-                  .map((item) => `• ${item.description.trim()}`)
+                  .map(
+                    (item) =>
+                      `• ${item.description.trim()} · ${actionItemOwnerLabel(
+                        item.owner,
+                        checkIn.teamMember?.name
+                      )}`
+                  )
                   .join("\n")}
                 onEdit={() => moveToStep(4)}
               />
