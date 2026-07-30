@@ -20,11 +20,13 @@ export function DatePicker({
   onChange,
   className,
   placeholder = "Pick a date",
+  maxDate,
 }: {
   value: string;
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  maxDate?: Date;
 }) {
   const selected = parseValue(value);
   const [open, setOpen] = useState(false);
@@ -49,6 +51,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
+          disabled={maxDate ? { after: maxDate } : undefined}
           onSelect={(date) => {
             onChange(date ? format(date, DATE_FORMAT) : "");
             setOpen(false);

@@ -33,6 +33,10 @@ const createSchema = z.object({
   scheduledDate: z.string().datetime(),
 });
 
+const dateSchema = z.object({
+  scheduledDate: z.string().datetime(),
+});
+
 const draftSchema = z.object({
   wins: z.string().optional(),
   challenges: z.string().optional(),
@@ -253,12 +257,11 @@ router.get("/wins", asyncHandler(async (_req, res) => {
       wins: { not: null },
       teamMember: { deletedAt: null },
     },
-    orderBy: [{ completedAt: "desc" }, { scheduledDate: "desc" }],
+    orderBy: { scheduledDate: "desc" },
     take: 24,
     select: {
       id: true,
       wins: true,
-      completedAt: true,
       scheduledDate: true,
       teamMember: {
         select: {
@@ -277,7 +280,7 @@ router.get("/wins", asyncHandler(async (_req, res) => {
     .map((checkIn) => ({
       id: checkIn.id,
       text: checkIn.wins!.trim(),
-      date: checkIn.completedAt ?? checkIn.scheduledDate,
+      date: checkIn.scheduledDate,
       teamMember: checkIn.teamMember,
     }));
 
@@ -291,6 +294,34 @@ router.get("/:id", asyncHandler(async (req, res) => {
     include: { actionItems: true, talkingPoints: true, teamMember: true },
   });
   if (!checkIn || checkIn.deletedAt) return res.status(404).json({ error: "Check-in not found" });
+  res.json(checkIn);
+}));
+
+// PATCH /api/check-ins/:id/date
+// Updates the date the conversation occurred. completedAt remains untouched as
+// audit metadata recording when Pulse was told the check-in was complete.
+router.patch("/:id/date", asyncHandler(async (req, res) => {
+  const parsed = dateSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const scheduledDate = new Date(parsed.data.scheduledDate);
+  if (scheduledDate.getTime() > Date.now()) {
+    return res.status(400).json({ error: "Check-in date cannot be in the future" });
+  }
+
+  const existing = await prisma.checkIn.findUnique({
+    where: { id: req.params.id },
+    select: { deletedAt: true },
+  });
+  if (!existing || existing.deletedAt) {
+    return res.status(404).json({ error: "Check-in not found" });
+  }
+
+  const checkIn = await prisma.checkIn.update({
+    where: { id: req.params.id },
+    data: { scheduledDate },
+    include: { actionItems: true, talkingPoints: true, teamMember: true },
+  });
   res.json(checkIn);
 }));
 

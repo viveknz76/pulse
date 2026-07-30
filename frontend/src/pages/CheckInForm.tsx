@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   CheckCircle2,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -22,6 +23,7 @@ import { PageTitle } from "../components/Typography";
 import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
 import { DatePicker } from "../components/DatePicker";
+import { CheckInDateDialog } from "../components/CheckInDateDialog";
 import { CompletionCelebration } from "../components/CompletionCelebration";
 import { EnergyPulse } from "../components/EnergyPulse";
 import { GuidedJourney, JourneyStep } from "../components/GuidedJourney";
@@ -172,6 +174,7 @@ export default function CheckInForm() {
   const [summaryText, setSummaryText] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [editingDate, setEditingDate] = useState(false);
 
   const loadCheckIn = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -290,7 +293,7 @@ export default function CheckInForm() {
     if (!checkIn) return "";
     return buildCheckInSummaryText({
       teamMemberName: checkIn.teamMember?.name || "",
-      date: new Date(),
+      date: new Date(checkIn.scheduledDate),
       wins,
       challenges,
       decisions,
@@ -378,7 +381,7 @@ export default function CheckInForm() {
     if (!checkIn || sendingEmail) return;
     setSendingEmail(true);
     try {
-      const dateLabel = new Date().toLocaleDateString(undefined, {
+      const dateLabel = new Date(checkIn.scheduledDate).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -402,9 +405,24 @@ export default function CheckInForm() {
       <PageTitle size="md" className="mb-1">
         Check-in with {checkIn.teamMember?.name}
       </PageTitle>
-      <p className="mb-7 text-sm text-muted-foreground">
-        A little space to listen, reflect, and leave aligned. Everything here is optional.
-      </p>
+      <div className="mb-7 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="text-sm text-muted-foreground">
+          A little space to listen, reflect, and leave aligned. Everything here is optional.
+        </p>
+        <button
+          type="button"
+          onClick={() => setEditingDate(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <CalendarDays className="size-3.5" />
+          {new Date(checkIn.scheduledDate).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+          <span className="font-medium text-brand-strong">Edit</span>
+        </button>
+      </div>
 
       <GuidedJourney
         steps={JOURNEY_STEPS}
@@ -698,6 +716,13 @@ export default function CheckInForm() {
           </p>
         )}
       </GuidedJourney>
+
+      <CheckInDateDialog
+        checkIn={checkIn}
+        open={editingDate}
+        onOpenChange={setEditingDate}
+        onSaved={setCheckIn}
+      />
 
       <Dialog open={summaryOpen} onOpenChange={(open) => !open && handleSummaryClose()}>
         <DialogContent className="sm:max-w-xl">

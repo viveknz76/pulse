@@ -1,7 +1,18 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { CalendarClock, Check, Copy, Mail, Pencil, Play, Repeat2, Trash2, X } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarDays,
+  Check,
+  Copy,
+  Mail,
+  Pencil,
+  Play,
+  Repeat2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { api } from "../api/client";
 import { CheckIn, TalkingPoint, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
@@ -12,6 +23,7 @@ import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
 import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
+import { CheckInDateDialog } from "../components/CheckInDateDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,6 +69,7 @@ export default function TeamMemberDetail() {
   const [addingPoint, setAddingPoint] = useState(false);
   const [editing, setEditing] = useState(false);
   const [holding, setHolding] = useState(false);
+  const [dateCheckIn, setDateCheckIn] = useState<CheckIn | null>(null);
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [editingPointContent, setEditingPointContent] = useState("");
   const [editingPointRecurring, setEditingPointRecurring] = useState(false);
@@ -180,7 +193,7 @@ export default function TeamMemberDetail() {
   function buildSummaryForCheckIn(c: CheckIn): string {
     return buildCheckInSummaryText({
       teamMemberName: member?.name || "",
-      date: new Date(c.completedAt || c.scheduledDate),
+      date: new Date(c.scheduledDate),
       wins: c.wins,
       challenges: c.challenges,
       decisions: c.decisions,
@@ -201,7 +214,7 @@ export default function TeamMemberDetail() {
     if (!member || sendingSummaryIds.has(c.id)) return;
     setSendingSummaryIds((ids) => new Set(ids).add(c.id));
     try {
-      const dateLabel = new Date(c.completedAt || c.scheduledDate).toLocaleDateString(undefined, {
+      const dateLabel = new Date(c.scheduledDate).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -432,7 +445,7 @@ export default function TeamMemberDetail() {
         )}
         <div className="flex flex-col gap-4">
           {completedCheckIns.map((c) => {
-          const date = c.completedAt || c.scheduledDate;
+          const date = c.scheduledDate;
           const talkingPoints = c.talkingPoints || [];
           const hasNarrative = !!(
             c.energyLevel ||
@@ -457,6 +470,11 @@ export default function TeamMemberDetail() {
                   <CardDescription>{timeAgo(date)}</CardDescription>
                 </div>
                 <div className="flex items-center gap-1">
+                  <IconActionButton
+                    label="Edit check-in date"
+                    icon={<CalendarDays />}
+                    onClick={() => setDateCheckIn(c)}
+                  />
                   <IconActionButton
                     label={member.email ? "Send email" : "No email on file for this team member"}
                     icon={<Mail />}
@@ -560,6 +578,15 @@ export default function TeamMemberDetail() {
         open={holding}
         onOpenChange={setHolding}
         onSaved={load}
+      />
+      <CheckInDateDialog
+        checkIn={dateCheckIn}
+        open={!!dateCheckIn}
+        onOpenChange={(open) => !open && setDateCheckIn(null)}
+        onSaved={() => {
+          setDateCheckIn(null);
+          void load();
+        }}
       />
     </div>
   );

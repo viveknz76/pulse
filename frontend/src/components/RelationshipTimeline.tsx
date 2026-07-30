@@ -67,8 +67,8 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
     )
     .sort(
       (a, b) =>
-        new Date(b.completedAt || b.scheduledDate).getTime() -
-        new Date(a.completedAt || a.scheduledDate).getTime()
+        new Date(b.scheduledDate).getTime() -
+        new Date(a.scheduledDate).getTime()
     );
 
   if (moments.length === 0) {
@@ -85,7 +85,7 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
   return (
     <ol className="mb-10" aria-label="Relationship timeline">
       {moments.map((checkIn) => {
-        const date = new Date(checkIn.completedAt || checkIn.scheduledDate);
+        const date = new Date(checkIn.scheduledDate);
         const commitments = checkIn.actionItems.filter((item) => item.description.trim());
 
         return (

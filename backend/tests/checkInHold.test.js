@@ -67,3 +67,19 @@ test("cadence resumes from the first completed check-in after leave", () => {
   );
   assert.equal(due.toISOString(), "2026-08-17T03:00:00.000Z");
 });
+
+test("normal cadence follows the editable check-in date", () => {
+  const due = effectiveNextDueDate(
+    {
+      checkInsPausedAt: null,
+      checkInsResumeOn: null,
+      startDate: new Date("2026-01-01T00:00:00.000Z"),
+      cadence: "FORTNIGHTLY",
+    },
+    {
+      scheduledDate: new Date("2026-07-22T12:00:00.000Z"),
+      completedAt: new Date("2026-07-30T03:00:00.000Z"),
+    }
+  );
+  assert.equal(due.toISOString(), "2026-08-05T12:00:00.000Z");
+});

@@ -75,7 +75,7 @@ router.get("/", asyncHandler(async (_req, res) => {
       ...rest,
       nextDueDate: nextDue,
       checkInsOnHold: isCheckInScheduleOnHold(m),
-      lastCompletedAt: lastCompleted?.completedAt ?? null,
+      lastCompletedAt: lastCompleted?.scheduledDate ?? null,
       activeCheckInId: activeByMember.get(m.id) ?? null,
     };
   });
