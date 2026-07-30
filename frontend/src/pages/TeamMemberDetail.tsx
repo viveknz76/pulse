@@ -272,6 +272,9 @@ export default function TeamMemberDetail() {
           <Button variant="outline" onClick={() => setEditing(true)}>
             Edit
           </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/team/${member.id}/prepare`}>Prepare</Link>
+          </Button>
           {member.checkInsOnHold ? (
             <Button onClick={resumeCheckIns}>
               <Play />

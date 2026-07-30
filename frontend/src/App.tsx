@@ -7,6 +7,7 @@ import TeamMembers from "./pages/TeamMembers";
 import TeamMemberDetail from "./pages/TeamMemberDetail";
 import CheckInForm from "./pages/CheckInForm";
 import Review from "./pages/Review";
+import CheckInPreparation from "./pages/CheckInPreparation";
 import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { PageLoading } from "./components/PageLoading";
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/team" element={<TeamMembers />} />
           <Route path="/team/:id" element={<TeamMemberDetail />} />
+          <Route path="/team/:id/prepare" element={<CheckInPreparation />} />
           <Route path="/check-ins/:id" element={<CheckInForm />} />
           <Route path="/review" element={<Review />} />
         </Route>

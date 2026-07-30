@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -87,7 +87,6 @@ function MomentumMetric({
 export default function Dashboard() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
   const [wins, setWins] = useState<PrivateWin[] | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -98,18 +97,6 @@ export default function Dashboard() {
       setWins(nextWins);
     });
   }, []);
-
-  async function startCheckIn(member: TeamMember) {
-    if (member.activeCheckInId) {
-      navigate(`/check-ins/${member.activeCheckInId}`);
-      return;
-    }
-    const checkIn = await api.post<{ id: string }>("/api/check-ins", {
-      teamMemberId: member.id,
-      scheduledDate: new Date().toISOString(),
-    });
-    navigate(`/check-ins/${checkIn.id}`);
-  }
 
   if (!members || !wins) return <PageLoading />;
 
@@ -199,9 +186,11 @@ export default function Dashboard() {
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {nextConversation ? (
-                <Button onClick={() => startCheckIn(nextConversation)}>
-                  {nextConversation.activeCheckInId ? "Resume next check-in" : "Start next check-in"}
-                  <ArrowRight />
+                <Button asChild>
+                  <Link to={`/team/${nextConversation.id}/prepare`}>
+                    Prepare next check-in
+                    <ArrowRight />
+                  </Link>
                 </Button>
               ) : (
                 <Button asChild>
@@ -284,8 +273,8 @@ export default function Dashboard() {
                   {relativeDueLabel(m.nextDueDate)}
                 </Badge>
                 <div className="mt-4 flex items-center gap-2.5">
-                  <Button size="sm" onClick={() => startCheckIn(m)}>
-                    {m.activeCheckInId ? "Resume check-in" : "Start check-in"}
+                  <Button size="sm" asChild>
+                    <Link to={`/team/${m.id}/prepare`}>Prepare</Link>
                   </Button>
                   <IconLinkAction
                     label="View history"
@@ -408,8 +397,8 @@ export default function Dashboard() {
                 </div>
                 <Badge>{relativeDueLabel(m.nextDueDate)}</Badge>
                 <div className="mt-4 flex items-center gap-2.5">
-                  <Button size="sm" variant="outline" onClick={() => startCheckIn(m)}>
-                    {m.activeCheckInId ? "Resume check-in" : "Start early"}
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to={`/team/${m.id}/prepare`}>Prepare early</Link>
                   </Button>
                   <IconLinkAction
                     label="View history"
