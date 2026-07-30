@@ -64,6 +64,7 @@ model CheckIn {
   challenges  String?
   decisions   String?
   growthNotes String?
+  privateNotes String?
   energyLevel Int?
 
   createdAt DateTime  @default(now())

@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Check,
   Copy,
+  LockKeyhole,
   Mail,
   Pencil,
   Play,
@@ -24,6 +25,7 @@ import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
 import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
 import { CheckInDateDialog } from "../components/CheckInDateDialog";
+import { PrivateNoteDialog } from "../components/PrivateNoteDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -70,6 +72,7 @@ export default function TeamMemberDetail() {
   const [editing, setEditing] = useState(false);
   const [holding, setHolding] = useState(false);
   const [dateCheckIn, setDateCheckIn] = useState<CheckIn | null>(null);
+  const [privateNoteCheckIn, setPrivateNoteCheckIn] = useState<CheckIn | null>(null);
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [editingPointContent, setEditingPointContent] = useState("");
   const [editingPointRecurring, setEditingPointRecurring] = useState(false);
@@ -471,6 +474,11 @@ export default function TeamMemberDetail() {
                 </div>
                 <div className="flex items-center gap-1">
                   <IconActionButton
+                    label={c.privateNotes ? "Edit private note" : "Add private note"}
+                    icon={<LockKeyhole />}
+                    onClick={() => setPrivateNoteCheckIn(c)}
+                  />
+                  <IconActionButton
                     label="Edit check-in date"
                     icon={<CalendarDays />}
                     onClick={() => setDateCheckIn(c)}
@@ -557,7 +565,19 @@ export default function TeamMemberDetail() {
                   </div>
                 )}
 
-                {!hasNarrative && !hasStructured && (
+                {c.privateNotes && (
+                  <div className="rounded-xl border border-border bg-overlay-subtle p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      <LockKeyhole className="size-3.5" />
+                      Private note to self
+                    </div>
+                    <p className="text-sm leading-relaxed whitespace-pre-line">
+                      {c.privateNotes}
+                    </p>
+                  </div>
+                )}
+
+                {!hasNarrative && !hasStructured && !c.privateNotes && (
                   <p className="text-sm text-muted-foreground">No notes recorded for this check-in.</p>
                 )}
               </CardContent>
@@ -585,6 +605,15 @@ export default function TeamMemberDetail() {
         onOpenChange={(open) => !open && setDateCheckIn(null)}
         onSaved={() => {
           setDateCheckIn(null);
+          void load();
+        }}
+      />
+      <PrivateNoteDialog
+        checkIn={privateNoteCheckIn}
+        open={!!privateNoteCheckIn}
+        onOpenChange={(open) => !open && setPrivateNoteCheckIn(null)}
+        onSaved={() => {
+          setPrivateNoteCheckIn(null);
           void load();
         }}
       />

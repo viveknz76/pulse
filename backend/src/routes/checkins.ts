@@ -37,11 +37,16 @@ const dateSchema = z.object({
   scheduledDate: z.string().datetime(),
 });
 
+const privateNoteSchema = z.object({
+  privateNotes: z.string().max(10000).nullable(),
+});
+
 const draftSchema = z.object({
   wins: z.string().optional(),
   challenges: z.string().optional(),
   decisions: z.string().optional(),
   growthNotes: z.string().optional(),
+  privateNotes: z.string().max(10000).optional().nullable(),
   energyLevel: z.number().int().min(1).max(5).optional().nullable(),
   actionItems: z.array(actionItemInput).default([]),
   talkingPoints: z.array(talkingPointInput).default([]),
@@ -61,6 +66,7 @@ async function applyCheckInUpdate(
     challenges,
     decisions,
     growthNotes,
+    privateNotes,
     energyLevel,
     actionItems,
     talkingPoints,
@@ -76,6 +82,7 @@ async function applyCheckInUpdate(
         challenges,
         decisions,
         growthNotes,
+        privateNotes: privateNotes?.trim() || null,
         energyLevel,
         ...(complete ? { status: "COMPLETED", completedAt: new Date() } : {}),
       },
@@ -320,6 +327,29 @@ router.patch("/:id/date", asyncHandler(async (req, res) => {
   const checkIn = await prisma.checkIn.update({
     where: { id: req.params.id },
     data: { scheduledDate },
+    include: { actionItems: true, talkingPoints: true, teamMember: true },
+  });
+  res.json(checkIn);
+}));
+
+// PATCH /api/check-ins/:id/private-note
+// Private notes are stored separately from shareable check-in content and are
+// never read by the summary/email builder.
+router.patch("/:id/private-note", asyncHandler(async (req, res) => {
+  const parsed = privateNoteSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const existing = await prisma.checkIn.findUnique({
+    where: { id: req.params.id },
+    select: { deletedAt: true },
+  });
+  if (!existing || existing.deletedAt) {
+    return res.status(404).json({ error: "Check-in not found" });
+  }
+
+  const checkIn = await prisma.checkIn.update({
+    where: { id: req.params.id },
+    data: { privateNotes: parsed.data.privateNotes?.trim() || null },
     include: { actionItems: true, talkingPoints: true, teamMember: true },
   });
   res.json(checkIn);

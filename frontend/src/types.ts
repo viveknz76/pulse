@@ -37,6 +37,7 @@ export interface CheckIn {
   challenges?: string | null;
   decisions?: string | null;
   growthNotes?: string | null;
+  privateNotes?: string | null;
   energyLevel?: number | null;
   actionItems: ActionItem[];
   talkingPoints?: TalkingPoint[];

@@ -9,6 +9,7 @@ import {
   Copy,
   Gauge,
   ListChecks,
+  LockKeyhole,
   Mail,
   MessagesSquare,
   Repeat2,
@@ -162,6 +163,7 @@ export default function CheckInForm() {
   const [challenges, setChallenges] = useState("");
   const [decisions, setDecisions] = useState("");
   const [growthNotes, setGrowthNotes] = useState("");
+  const [privateNotes, setPrivateNotes] = useState("");
   const [energyLevel, setEnergyLevel] = useState<number | null>(null);
   const [items, setItems] = useState<DraftActionItem[]>([]);
   const [points, setPoints] = useState<DraftTalkingPoint[]>([]);
@@ -205,6 +207,7 @@ export default function CheckInForm() {
     setChallenges(ci.challenges || "");
     setDecisions(ci.decisions || "");
     setGrowthNotes(ci.growthNotes || "");
+    setPrivateNotes(ci.privateNotes || "");
     setEnergyLevel(ci.energyLevel ?? null);
     setItems(
       [...alreadyHere, ...priorOpen].map((a) => ({
@@ -310,6 +313,7 @@ export default function CheckInForm() {
       challenges,
       decisions,
       growthNotes,
+      privateNotes,
       energyLevel,
       actionItems: items
         .filter((it) => it.description.trim())
@@ -657,6 +661,26 @@ export default function CheckInForm() {
                   .map((item) => `• ${item.description.trim()}`)
                   .join("\n")}
                 onEdit={() => moveToStep(4)}
+              />
+            </div>
+            <div className="sm:col-span-2 rounded-xl border border-border bg-overlay-subtle p-4">
+              <div className="mb-3 flex items-start gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card text-muted-foreground ring-1 ring-inset ring-border">
+                  <LockKeyhole className="size-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Private note to self</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                    Kept inside Pulse. Never included in copied or emailed summaries.
+                  </p>
+                </div>
+              </div>
+              <Textarea
+                value={privateNotes}
+                onChange={(event) => setPrivateNotes(event.target.value)}
+                placeholder="Something useful to remember before your next conversation…"
+                className="min-h-28 bg-card"
+                maxLength={10000}
               />
             </div>
           </div>
