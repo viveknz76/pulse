@@ -20,16 +20,26 @@ export function DatePicker({
   onChange,
   className,
   placeholder = "Pick a date",
+  minDate,
   maxDate,
 }: {
   value: string;
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  minDate?: Date;
   maxDate?: Date;
 }) {
   const selected = parseValue(value);
   const [open, setOpen] = useState(false);
+  const disabled =
+    minDate && maxDate
+      ? [{ before: minDate }, { after: maxDate }]
+      : minDate
+        ? { before: minDate }
+        : maxDate
+          ? { after: maxDate }
+          : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -38,7 +48,7 @@ export function DatePicker({
           type="button"
           variant="outline"
           className={cn(
-            "justify-start text-left font-normal",
+            "justify-start text-left font-normal hover:translate-y-0",
             !selected && "text-muted-foreground",
             className
           )}
@@ -51,7 +61,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
-          disabled={maxDate ? { after: maxDate } : undefined}
+          disabled={disabled}
           onSelect={(date) => {
             onChange(date ? format(date, DATE_FORMAT) : "");
             setOpen(false);

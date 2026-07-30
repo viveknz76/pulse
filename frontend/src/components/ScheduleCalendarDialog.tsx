@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarPlus, ExternalLink } from "lucide-react";
+import { startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { api } from "../api/client";
+import { DatePicker } from "./DatePicker";
 import {
   CalendarConnectionStatus,
   CheckInCalendarEvent,
@@ -28,15 +30,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-function localDateTimeValue(value: string): string {
+function localScheduleValue(value: string): { date: string; time: string } {
   const candidate = new Date(value);
-  const date =
+  const scheduled =
     Number.isNaN(candidate.getTime()) || candidate.getTime() <= Date.now()
       ? new Date(Date.now() + 24 * 60 * 60 * 1000)
       : candidate;
-  date.setHours(10, 0, 0, 0);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
-  return local.toISOString().slice(0, 16);
+  scheduled.setHours(10, 0, 0, 0);
+  const local = new Date(
+    scheduled.getTime() - scheduled.getTimezoneOffset() * 60 * 1000
+  );
+  const [date, time] = local.toISOString().slice(0, 16).split("T");
+  return { date, time };
 }
 
 export function ScheduleCalendarDialog({
@@ -49,7 +54,9 @@ export function ScheduleCalendarDialog({
   onCreated?: (event: CheckInCalendarEvent) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [startsAt, setStartsAt] = useState(() => localDateTimeValue(member.nextDueDate));
+  const initialSchedule = localScheduleValue(member.nextDueDate);
+  const [scheduleDate, setScheduleDate] = useState(initialSchedule.date);
+  const [scheduleTime, setScheduleTime] = useState(initialSchedule.time);
   const [durationMinutes, setDurationMinutes] = useState("30");
   const [inviteAttendee, setInviteAttendee] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,7 +64,9 @@ export function ScheduleCalendarDialog({
 
   useEffect(() => {
     if (open) {
-      setStartsAt(localDateTimeValue(member.nextDueDate));
+      const nextSchedule = localScheduleValue(member.nextDueDate);
+      setScheduleDate(nextSchedule.date);
+      setScheduleTime(nextSchedule.time);
       setDurationMinutes("30");
       setInviteAttendee(false);
       setCreatedEvent(null);
@@ -86,9 +95,13 @@ export function ScheduleCalendarDialog({
 
   async function schedule(event: FormEvent) {
     event.preventDefault();
-    const start = new Date(startsAt);
-    if (Number.isNaN(start.getTime())) {
+    const start = new Date(`${scheduleDate}T${scheduleTime}`);
+    if (!scheduleDate || !scheduleTime || Number.isNaN(start.getTime())) {
       toast.error("Choose a valid date and time");
+      return;
+    }
+    if (start.getTime() <= Date.now()) {
+      toast.error("Choose a future date and time");
       return;
     }
 
@@ -151,17 +164,34 @@ export function ScheduleCalendarDialog({
             </DialogHeader>
 
             <div className="my-5 space-y-5">
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold" htmlFor="calendar-start">
-                  Date and time
-                </label>
-                <Input
-                  id="calendar-start"
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(event) => setStartsAt(event.target.value)}
-                  required
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold">Date</label>
+                  <DatePicker
+                    value={scheduleDate}
+                    onChange={setScheduleDate}
+                    className="w-full"
+                    placeholder="Choose a date"
+                    minDate={startOfDay(new Date())}
+                  />
+                </div>
+                <div>
+                  <label
+                    className="mb-1.5 block text-sm font-semibold"
+                    htmlFor="calendar-time"
+                  >
+                    Time
+                  </label>
+                  <Input
+                    id="calendar-time"
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(event) => setScheduleTime(event.target.value)}
+                    className="[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                    step={900}
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold">Duration</label>
