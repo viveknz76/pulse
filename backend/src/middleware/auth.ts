@@ -13,6 +13,25 @@ export function signSession(payload: { email: string; name?: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 }
 
+export function signCalendarOAuthState(email: string): string {
+  return jwt.sign(
+    { email, purpose: "google-calendar" },
+    JWT_SECRET,
+    { expiresIn: "10m" }
+  );
+}
+
+export function verifyCalendarOAuthState(token: string): { email: string } {
+  const decoded = jwt.verify(token, JWT_SECRET) as {
+    email?: string;
+    purpose?: string;
+  };
+  if (!decoded.email || decoded.purpose !== "google-calendar") {
+    throw new Error("Invalid Google Calendar authorization state");
+  }
+  return { email: decoded.email };
+}
+
 export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const token = req.cookies?.[AUTH_COOKIE_NAME];
   if (!token) {

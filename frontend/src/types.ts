@@ -84,3 +84,34 @@ export interface ReviewData {
   recentlyCompleted: ActionItem[];
   checkInsDueThisWeek: { teamMember: TeamMember; nextDueDate: string }[];
 }
+
+export interface CalendarConnectionStatus {
+  configured: boolean;
+  connected: boolean;
+  accountEmail?: string | null;
+  connectedAt?: string | null;
+  calendarId?: string | null;
+}
+
+export interface CheckInCalendarEvent {
+  id: string;
+  teamMemberId: string;
+  googleEventId: string;
+  htmlLink?: string | null;
+  startsAt: string;
+  endsAt: string;
+  createdByPulse: boolean;
+  teamMember: Pick<TeamMember, "id" | "name" | "avatarUrl" | "avatarSeed">;
+}
+
+export interface CalendarEventCandidate {
+  id: string;
+  summary: string;
+  htmlLink?: string | null;
+  startsAt: string;
+  endsAt: string;
+  matchScore: number;
+  matchReasons: string[];
+  linkedEventId?: string | null;
+  linkedTeamMember?: Pick<TeamMember, "id" | "name"> | null;
+}

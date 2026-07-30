@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { CalendarDays, Moon, Sun } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MemberAvatar } from "./MemberAvatar";
@@ -72,7 +72,8 @@ export default function Layout() {
 
   const isTeamActive = pathname.startsWith("/team") || pathname.startsWith("/check-ins");
   const isReviewActive = pathname.startsWith("/review");
-  const isDashboardActive = !isTeamActive && !isReviewActive;
+  const isCalendarActive = pathname.startsWith("/calendar");
+  const isDashboardActive = !isTeamActive && !isReviewActive && !isCalendarActive;
 
   const name = user?.name || user?.email || "";
 
@@ -92,6 +93,10 @@ export default function Layout() {
           <NavItem to="/review" active={isReviewActive}>
             <ReviewIcon />
             Review
+          </NavItem>
+          <NavItem to="/calendar" active={isCalendarActive}>
+            <CalendarDays className="size-[17px]" />
+            Calendar
           </NavItem>
         </nav>
         <div className="flex items-center gap-2.5 border-t border-border pt-4">

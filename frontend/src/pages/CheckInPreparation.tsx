@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
+  CalendarCheck2,
   CalendarClock,
   CheckCircle2,
   Lightbulb,
@@ -10,10 +11,16 @@ import {
   MessageCircleMore,
   Repeat2,
   Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../api/client";
-import { CheckIn, TeamMember } from "../types";
+import {
+  CalendarConnectionStatus,
+  CheckIn,
+  CheckInCalendarEvent,
+  TeamMember,
+} from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
@@ -23,6 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { ScheduleCalendarDialog } from "../components/ScheduleCalendarDialog";
+import { LinkCalendarEventDialog } from "../components/LinkCalendarEventDialog";
 
 function dateLabel(value: string): string {
   return new Date(value).toLocaleDateString(undefined, {
@@ -63,6 +72,8 @@ export default function CheckInPreparation() {
   const [member, setMember] = useState<TeamMember | null>(null);
   const [newPoint, setNewPoint] = useState("");
   const [addingPoint, setAddingPoint] = useState(false);
+  const [calendarStatus, setCalendarStatus] = useState<CalendarConnectionStatus | null>(null);
+  const [calendarEvent, setCalendarEvent] = useState<CheckInCalendarEvent | null>(null);
 
   const load = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -81,6 +92,32 @@ export default function CheckInPreparation() {
       ignore = true;
     };
   }, [load]);
+
+  useEffect(() => {
+    let ignore = false;
+    api
+      .get<CalendarConnectionStatus>("/api/calendar/status")
+      .then(async (status) => {
+        if (ignore) return;
+        setCalendarStatus(status);
+        if (!status.connected || !id) {
+          setCalendarEvent(null);
+          return;
+        }
+        const events = await api.get<CheckInCalendarEvent[]>(
+          `/api/calendar/events?teamMemberId=${encodeURIComponent(id)}`
+        );
+        if (!ignore) setCalendarEvent(events[0] || null);
+      })
+      .catch(() => {
+        if (!ignore) {
+          setCalendarStatus({ configured: false, connected: false });
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   async function addTalkingPoint(event: FormEvent) {
     event.preventDefault();
@@ -159,6 +196,37 @@ export default function CheckInPreparation() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {calendarEvent ? (
+            calendarEvent.htmlLink ? (
+              <Button variant="outline" asChild>
+                <a href={calendarEvent.htmlLink} target="_blank" rel="noreferrer">
+                  <CalendarCheck2 />
+                  Calendar linked
+                  <ExternalLink />
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" asChild>
+                <Link to="/calendar">
+                  <CalendarCheck2 />
+                  Calendar linked
+                </Link>
+              </Button>
+            )
+          ) : (
+            <>
+              <ScheduleCalendarDialog
+                member={member}
+                status={calendarStatus}
+                onCreated={setCalendarEvent}
+              />
+              <LinkCalendarEventDialog
+                member={member}
+                status={calendarStatus}
+                onLinked={setCalendarEvent}
+              />
+            </>
+          )}
           <Button variant="outline" asChild>
             <Link to={`/team/${member.id}#check-in-history`}>View history</Link>
           </Button>

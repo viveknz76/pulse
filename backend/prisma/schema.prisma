@@ -44,9 +44,10 @@ model TeamMember {
   deletedAt          DateTime?
   deletedBy          String?
 
-  checkIns      CheckIn[]
-  actionItems   ActionItem[]
-  talkingPoints TalkingPoint[]
+  checkIns       CheckIn[]
+  actionItems    ActionItem[]
+  talkingPoints  TalkingPoint[]
+  calendarEvents CheckInCalendarEvent[]
 
   @@index([deletedAt])
 }
@@ -60,12 +61,12 @@ model CheckIn {
   completedAt   DateTime?
   status        CheckInStatus @default(SCHEDULED)
 
-  wins        String?
-  challenges  String?
-  decisions   String?
-  growthNotes String?
+  wins         String?
+  challenges   String?
+  decisions    String?
+  growthNotes  String?
   privateNotes String?
-  energyLevel Int?
+  energyLevel  Int?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -127,4 +128,38 @@ model TalkingPoint {
 
   @@index([teamMemberId, resolved])
   @@index([deletedAt])
+}
+
+model CalendarConnection {
+  id                    String   @id @default(cuid())
+  userEmail             String   @unique
+  googleAccountEmail    String
+  encryptedRefreshToken String
+  scope                 String?
+  calendarId            String   @default("primary")
+  connectedAt           DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  events CheckInCalendarEvent[]
+}
+
+model CheckInCalendarEvent {
+  id             String   @id @default(cuid())
+  userEmail      String
+  teamMemberId   String
+  googleEventId  String
+  htmlLink       String?
+  startsAt       DateTime
+  endsAt         DateTime
+  createdByPulse Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  connection CalendarConnection @relation(fields: [userEmail], references: [userEmail], onDelete: Cascade)
+  teamMember TeamMember         @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([userEmail, googleEventId])
+  @@index([teamMemberId, startsAt])
+  @@index([userEmail, startsAt])
 }

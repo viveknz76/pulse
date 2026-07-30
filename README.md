@@ -26,6 +26,30 @@ You said your Google account uses ricado.co.nz Workspace SSO — this app uses *
    you'll access the app from, e.g. `http://192.168.1.x:5173` if running on a home server).
 4. Copy the generated **Client ID**.
 
+### Optional: connect Google Calendar
+
+Pulse can create check-in events in the signed-in user's Google Calendar:
+
+1. In the same Google Cloud project, enable the **Google Calendar API**.
+2. Open the existing Web application OAuth client and add this exact
+   **Authorized redirect URI**:
+   `http://localhost:4000/api/calendar/google/callback`
+3. Copy the OAuth **Client secret** into `GOOGLE_CLIENT_SECRET`.
+4. Generate the token-encryption key:
+   `openssl rand -hex 32`
+5. Put that value in `CALENDAR_TOKEN_ENCRYPTION_KEY`, rebuild Pulse, then open
+   **Calendar** in the app and connect your RICADO Google account.
+
+The Calendar connection requests only event access. Pulse does not continuously
+read or bulk-import calendar events, and it invites a team member only when you
+explicitly select that option while scheduling.
+
+From a team member's preparation view, **Link existing** searches a bounded
+window around the next due date and suggests appointments using attendee email,
+title, and date proximity. You always choose the appointment. Unlinking removes
+only the Pulse association and never deletes an appointment that already existed
+in Google Calendar.
+
 ## 2. Configure environment variables
 
 ```bash
@@ -35,6 +59,10 @@ cp .env.example .env
 Edit `.env`:
 
 - `GOOGLE_CLIENT_ID` — the client ID from step 1.
+- `GOOGLE_CLIENT_SECRET` — required only for Google Calendar integration.
+- `GOOGLE_CALENDAR_REDIRECT_URI` — keep the localhost default unless the backend URL changes.
+- `CALENDAR_TOKEN_ENCRYPTION_KEY` — a dedicated 32-byte key used to encrypt refresh tokens.
+- `FRONTEND_URL` — used for OAuth redirects and links inside calendar events.
 - `ALLOWED_EMAILS` — comma-separate every Google account that should be able to sign in,
   including your exact work SSO address and personal Gmail if you use both.
 - Leave `ALLOW_DOMAIN_ACCESS=false` for this single-user app. Setting it to `true` together
