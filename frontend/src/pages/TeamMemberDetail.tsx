@@ -6,7 +6,7 @@ import {
   CalendarDays,
   Check,
   Copy,
-  LockKeyhole,
+  NotebookPen,
   Mail,
   Pencil,
   Play,
@@ -477,8 +477,8 @@ export default function TeamMemberDetail() {
                 </div>
                 <div className="flex items-center gap-1">
                   <IconActionButton
-                    label={c.privateNotes ? "Edit private note" : "Add private note"}
-                    icon={<LockKeyhole />}
+                    label={c.privateNotes ? "Edit reflection" : "Add reflection"}
+                    icon={<NotebookPen />}
                     onClick={() => setPrivateNoteCheckIn(c)}
                   />
                   <IconActionButton
@@ -571,8 +571,8 @@ export default function TeamMemberDetail() {
                 {c.privateNotes && (
                   <div className="rounded-xl border border-border bg-overlay-subtle p-4">
                     <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                      <LockKeyhole className="size-3.5" />
-                      Private note to self
+                      <NotebookPen className="size-3.5" />
+                      Reflection
                     </div>
                     <p className="text-sm leading-relaxed whitespace-pre-line">
                       {c.privateNotes}

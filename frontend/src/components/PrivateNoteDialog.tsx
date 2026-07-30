@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { LockKeyhole } from "lucide-react";
+import { NotebookPen } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../api/client";
 import { CheckIn } from "../types";
@@ -42,7 +42,7 @@ export function PrivateNoteDialog({
         `/api/check-ins/${checkIn.id}/private-note`,
         { privateNotes: privateNotes.trim() || null }
       );
-      toast.success(privateNotes.trim() ? "Private note saved" : "Private note removed");
+      toast.success(privateNotes.trim() ? "Reflection saved" : "Reflection removed");
       onSaved(updated);
       onOpenChange(false);
     } finally {
@@ -56,12 +56,12 @@ export function PrivateNoteDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <div className="mb-1 flex size-9 items-center justify-center rounded-xl bg-overlay-subtle text-muted-foreground">
-              <LockKeyhole className="size-4" />
+              <NotebookPen className="size-4" />
             </div>
-            <DialogTitle>Private note to self</DialogTitle>
+            <DialogTitle>Reflection</DialogTitle>
             <DialogDescription>
-              Kept inside Pulse for your own reflection. It is never included in copied or
-              emailed check-in summaries.
+              A quiet space for your own thoughts. It is never included in copied or emailed
+              check-in summaries.
             </DialogDescription>
           </DialogHeader>
 
@@ -79,7 +79,7 @@ export function PrivateNoteDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save private note"}
+              {saving ? "Saving…" : "Save reflection"}
             </Button>
           </DialogFooter>
         </form>

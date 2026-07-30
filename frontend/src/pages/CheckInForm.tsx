@@ -9,7 +9,7 @@ import {
   Copy,
   Gauge,
   ListChecks,
-  LockKeyhole,
+  NotebookPen,
   Mail,
   MessagesSquare,
   Repeat2,
@@ -666,12 +666,12 @@ export default function CheckInForm() {
             <div className="sm:col-span-2 rounded-xl border border-border bg-overlay-subtle p-4">
               <div className="mb-3 flex items-start gap-2.5">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card text-muted-foreground ring-1 ring-inset ring-border">
-                  <LockKeyhole className="size-4" />
+                  <NotebookPen className="size-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">Private note to self</p>
+                  <p className="text-sm font-semibold">Reflection</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                    Kept inside Pulse. Never included in copied or emailed summaries.
+                    A space for your own thoughts. Never included in copied or emailed summaries.
                   </p>
                 </div>
               </div>

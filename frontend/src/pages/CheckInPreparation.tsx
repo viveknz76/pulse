@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   Lightbulb,
   ListChecks,
-  LockKeyhole,
+  NotebookPen,
   MessageCircleMore,
   Repeat2,
   Sparkles,
@@ -238,8 +238,8 @@ export default function CheckInPreparation() {
                   {lastCheckIn.privateNotes && (
                     <div className="mt-5 rounded-xl border border-border bg-overlay-subtle p-4">
                       <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                        <LockKeyhole className="size-3.5" />
-                        Private note to self
+                        <NotebookPen className="size-3.5" />
+                        Reflection
                       </div>
                       <p className="text-sm leading-relaxed whitespace-pre-line">
                         {lastCheckIn.privateNotes}
