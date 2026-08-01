@@ -34,6 +34,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { cliftonStrengthLabel } from "@/lib/cliftonStrengths";
 
 function timeAgo(dateStr: string): string {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
@@ -265,6 +266,20 @@ export default function TeamMemberDetail() {
             <PageTitle size="sm">{member.name}</PageTitle>
             {member.role && (
               <p className="mt-0.5 text-[0.9rem] text-[var(--muted-foreground-2)]">{member.role}</p>
+            )}
+            {member.cliftonStrengths.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Top strengths">
+                {member.cliftonStrengths.map((strength, index) => (
+                  <Badge
+                    key={strength}
+                    variant="secondary"
+                    className="gap-1 bg-brand-soft text-brand-strong"
+                  >
+                    <span className="opacity-70">{index + 1}.</span>
+                    {cliftonStrengthLabel(strength)}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
         </div>

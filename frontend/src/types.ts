@@ -1,3 +1,7 @@
+import type { CliftonStrength } from "./lib/cliftonStrengths";
+
+export type { CliftonStrength } from "./lib/cliftonStrengths";
+
 export type Cadence = "WEEKLY" | "FORTNIGHTLY" | "MONTHLY";
 export type CheckInStatus = "SCHEDULED" | "COMPLETED" | "SKIPPED";
 export type ActionItemStatus = "OPEN" | "IN_PROGRESS" | "DONE";
@@ -22,6 +26,7 @@ export interface TeamMember {
   activeCheckInId?: string | null;
   deletedAt?: string | null;
   deletedBy?: string | null;
+  cliftonStrengths: CliftonStrength[];
   checkIns?: CheckIn[];
   actionItems?: ActionItem[];
   talkingPoints?: TalkingPoint[];

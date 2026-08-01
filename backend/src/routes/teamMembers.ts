@@ -10,6 +10,7 @@ import {
   effectiveNextDueDate,
   isCheckInScheduleOnHold,
 } from "../utils/checkInHold";
+import { cliftonStrengthsSchema } from "../utils/cliftonStrengths";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ const createSchema = z.object({
   cadence: cadenceEnum.default("FORTNIGHTLY"),
   startDate: z.string().datetime().optional(),
   notes: z.string().optional(),
+  cliftonStrengths: cliftonStrengthsSchema.default([]),
 });
 
 const updateSchema = createSchema.partial().extend({

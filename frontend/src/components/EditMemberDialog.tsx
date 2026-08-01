@@ -2,8 +2,9 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Camera, Check, Trash2 } from "lucide-react";
 import { api } from "../api/client";
-import { Cadence, TeamMember } from "../types";
+import { Cadence, CliftonStrength, TeamMember } from "../types";
 import { avatarChoiceSeeds } from "../lib/avatarIcons";
+import { CLIFTON_STRENGTH_OPTIONS } from "../lib/cliftonStrengths";
 import { MemberAvatar } from "./MemberAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,12 @@ import {
 } from "@/components/ui/dialog";
 
 const FIELD_LABEL = "mb-1.5 block text-sm font-medium text-foreground";
+
+type StrengthSelection = CliftonStrength | "";
+
+function strengthSelections(strengths: CliftonStrength[] = []): StrengthSelection[] {
+  return strengths.length < 5 ? [...strengths, ""] : strengths.slice(0, 5);
+}
 
 interface EditMemberDialogProps {
   member: TeamMember | null;
@@ -36,6 +43,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [strengths, setStrengths] = useState<StrengthSelection[]>([""]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
@@ -55,6 +63,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
       setAvatarPreview(null);
       setRemovePhoto(false);
       setSelectedAvatarSeed(member.avatarSeed || null);
+      setStrengths(strengthSelections(member.cliftonStrengths));
     }
   }, [member]);
 
@@ -94,6 +103,21 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
     setSelectedAvatarSeed(seed);
   }
 
+  function selectStrength(index: number, strength: CliftonStrength) {
+    const next = [...strengths];
+    next[index] = strength;
+    const selected = next.filter((value): value is CliftonStrength => Boolean(value));
+    setStrengths(strengthSelections(selected));
+  }
+
+  function removeStrength(index: number) {
+    const selected = strengths.filter(
+      (value, strengthIndex): value is CliftonStrength =>
+        strengthIndex !== index && Boolean(value)
+    );
+    setStrengths(strengthSelections(selected));
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!member || !form.name.trim()) return;
@@ -106,6 +130,9 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
         cadence: form.cadence,
         notes: form.notes.trim(),
         avatarSeed: selectedAvatarSeed,
+        cliftonStrengths: strengths.filter(
+          (strength): strength is CliftonStrength => Boolean(strength)
+        ),
       });
       if (avatarFile) {
         const body = new FormData();
@@ -298,6 +325,54 @@ export function EditMemberDialog({ member, open, onOpenChange, onSaved }: EditMe
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="Optional"
               />
+            </div>
+            <div className="rounded-xl border border-border bg-muted/35 p-4">
+              <label className={FIELD_LABEL}>CliftonStrengths Top 5</label>
+              <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+                Record the themes this person has shared, in rank order.
+              </p>
+              <div className="grid gap-2">
+                {strengths.map((strength, index) => (
+                  <div key={`${index}-${strength}`} className="flex items-center gap-2">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-overlay-subtle text-xs font-semibold text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <Select
+                      value={strength || undefined}
+                      onValueChange={(value) => selectStrength(index, value as CliftonStrength)}
+                    >
+                      <SelectTrigger className="flex-1" aria-label={`Strength ${index + 1}`}>
+                        <SelectValue placeholder="Choose a strength" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLIFTON_STRENGTH_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            disabled={strengths.some(
+                              (selected, selectedIndex) =>
+                                selectedIndex !== index && selected === option.value
+                            )}
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {strength && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove strength ${index + 1}`}
+                        onClick={() => removeStrength(index)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label className={FIELD_LABEL}>Notes</label>

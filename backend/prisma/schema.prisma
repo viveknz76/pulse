@@ -25,24 +25,62 @@ enum ActionItemStatus {
   DONE
 }
 
+enum CliftonStrength {
+  ACHIEVER
+  ACTIVATOR
+  ADAPTABILITY
+  ANALYTICAL
+  ARRANGER
+  BELIEF
+  COMMAND
+  COMMUNICATION
+  COMPETITION
+  CONNECTEDNESS
+  CONSISTENCY
+  CONTEXT
+  DELIBERATIVE
+  DEVELOPER
+  DISCIPLINE
+  EMPATHY
+  FOCUS
+  FUTURISTIC
+  HARMONY
+  IDEATION
+  INCLUDER
+  INDIVIDUALIZATION
+  INPUT
+  INTELLECTION
+  LEARNER
+  MAXIMIZER
+  POSITIVITY
+  RELATOR
+  RESPONSIBILITY
+  RESTORATIVE
+  SELF_ASSURANCE
+  SIGNIFICANCE
+  STRATEGIC
+  WOO
+}
+
 model TeamMember {
-  id                 String    @id @default(cuid())
+  id                 String            @id @default(cuid())
   name               String
   role               String?
   email              String?
   avatarUrl          String?
   avatarSeed         String?
-  cadence            Cadence   @default(FORTNIGHTLY)
-  active             Boolean   @default(true)
-  startDate          DateTime  @default(now())
+  cadence            Cadence           @default(FORTNIGHTLY)
+  active             Boolean           @default(true)
+  startDate          DateTime          @default(now())
   notes              String?
   checkInsPausedAt   DateTime?
   checkInsResumeOn   DateTime?
   checkInsHoldReason String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   deletedAt          DateTime?
   deletedBy          String?
+  cliftonStrengths   CliftonStrength[] @default([])
 
   checkIns       CheckIn[]
   actionItems    ActionItem[]
