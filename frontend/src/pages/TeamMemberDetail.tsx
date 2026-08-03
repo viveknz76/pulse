@@ -20,7 +20,6 @@ import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
-import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
 import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
@@ -70,7 +69,6 @@ export default function TeamMemberDetail() {
   const [newPoint, setNewPoint] = useState("");
   const [newPointRecurring, setNewPointRecurring] = useState(false);
   const [addingPoint, setAddingPoint] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [holding, setHolding] = useState(false);
   const [dateCheckIn, setDateCheckIn] = useState<CheckIn | null>(null);
   const [privateNoteCheckIn, setPrivateNoteCheckIn] = useState<CheckIn | null>(null);
@@ -284,8 +282,8 @@ export default function TeamMemberDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2.5">
-          <Button variant="outline" onClick={() => setEditing(true)}>
-            Edit
+          <Button variant="outline" asChild>
+            <Link to={`/team/${member.id}/edit`}>Edit</Link>
           </Button>
           <Button variant="outline" asChild>
             <Link to={`/team/${member.id}/prepare`}>Prepare</Link>
@@ -605,12 +603,6 @@ export default function TeamMemberDetail() {
         </div>
       </section>
 
-      <EditMemberDialog
-        member={member}
-        open={editing}
-        onOpenChange={setEditing}
-        onSaved={load}
-      />
       <CheckInHoldDialog
         member={member}
         open={holding}

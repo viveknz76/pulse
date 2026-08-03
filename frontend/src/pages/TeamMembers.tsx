@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CalendarClock, History, Pencil, Play, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { api } from "../api/client";
@@ -7,7 +7,6 @@ import { Cadence, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle } from "../components/Typography";
-import { EditMemberDialog } from "../components/EditMemberDialog";
 import { IconActionButton } from "../components/IconActionButton";
 import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
 import { Button } from "@/components/ui/button";
@@ -40,8 +39,8 @@ export default function TeamMembers() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<TeamMember | null>(null);
-  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [holdingMember, setHoldingMember] = useState<TeamMember | null>(null);
+  const navigate = useNavigate();
 
   function load() {
     api.get<TeamMember[]>("/api/team-members").then(setMembers);
@@ -230,7 +229,7 @@ export default function TeamMembers() {
                         <IconActionButton
                           label="Edit"
                           icon={<Pencil />}
-                          onClick={() => setEditingMember(m)}
+                          onClick={() => navigate(`/team/${m.id}/edit`)}
                         />
                         {m.active &&
                           (m.checkInsOnHold ? (
@@ -290,12 +289,6 @@ export default function TeamMembers() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <EditMemberDialog
-        member={editingMember}
-        open={!!editingMember}
-        onOpenChange={(open) => !open && setEditingMember(null)}
-        onSaved={load}
-      />
       <CheckInHoldDialog
         member={holdingMember}
         open={!!holdingMember}
