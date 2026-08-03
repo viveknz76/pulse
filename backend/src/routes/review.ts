@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { currentWeekRange } from "../utils/cadence";
+import { currentWeekRanges } from "../utils/dateOnly";
 import { asyncHandler } from "../middleware/asyncHandler";
 import {
   effectiveNextDueDate,
@@ -12,7 +12,7 @@ const router = Router();
 
 // GET /api/review — weekly review of action items: overdue, due this week, upcoming.
 router.get("/", asyncHandler(async (_req, res) => {
-  const { start, end } = currentWeekRange();
+  const { startDate, endDate, startInstant, endInstantExclusive } = currentWeekRanges();
 
   const notDeleted: Prisma.ActionItemWhereInput = {
     deletedAt: null,
@@ -25,7 +25,7 @@ router.get("/", asyncHandler(async (_req, res) => {
       where: {
         ...notDeleted,
         status: { not: "DONE" },
-        dueDate: { lt: start },
+        dueDate: { lt: startDate },
         carriedOverTo: { is: null },
       },
       include: { teamMember: true },
@@ -35,7 +35,7 @@ router.get("/", asyncHandler(async (_req, res) => {
       where: {
         ...notDeleted,
         status: { not: "DONE" },
-        dueDate: { gte: start, lte: end },
+        dueDate: { gte: startDate, lte: endDate },
         carriedOverTo: { is: null },
       },
       include: { teamMember: true },
@@ -45,7 +45,7 @@ router.get("/", asyncHandler(async (_req, res) => {
       where: {
         ...notDeleted,
         status: { not: "DONE" },
-        dueDate: { gt: end },
+        dueDate: { gt: endDate },
         carriedOverTo: { is: null },
       },
       include: { teamMember: true },
@@ -65,7 +65,7 @@ router.get("/", asyncHandler(async (_req, res) => {
       where: {
         ...notDeleted,
         status: "DONE",
-        completedAt: { gte: start, lte: end },
+        completedAt: { gte: startInstant, lt: endInstantExclusive },
         carriedOverTo: { is: null },
       },
       include: { teamMember: true },
@@ -74,29 +74,46 @@ router.get("/", asyncHandler(async (_req, res) => {
   ]);
 
   // Team members whose next check-in is due this week.
-  const members = await prisma.teamMember.findMany({
-    where: { active: true, deletedAt: null },
-    include: {
-      checkIns: {
-        where: { status: "COMPLETED", deletedAt: null },
-        orderBy: { scheduledDate: "desc" },
-        take: 1,
+  const [members, activeCheckIns] = await Promise.all([
+    prisma.teamMember.findMany({
+      where: { active: true, deletedAt: null },
+      include: {
+        checkIns: {
+          where: { status: "COMPLETED", deletedAt: null },
+          orderBy: { scheduledDate: "desc" },
+          take: 1,
+        },
       },
-    },
-  });
+    }),
+    prisma.checkIn.findMany({
+      where: {
+        status: "SCHEDULED",
+        deletedAt: null,
+        teamMember: { active: true, deletedAt: null },
+      },
+      select: { teamMemberId: true, scheduledDate: true },
+    }),
+  ]);
+
+  const activeByMember = new Map(
+    activeCheckIns.map((checkIn: (typeof activeCheckIns)[number]) => [
+      checkIn.teamMemberId,
+      checkIn,
+    ])
+  );
 
   const checkInsDueThisWeek = members
     .filter((m: (typeof members)[number]) => !isCheckInScheduleOnHold(m))
     .map((m: (typeof members)[number]) => {
       const lastCompleted = m.checkIns[0];
-      const due = effectiveNextDueDate(m, lastCompleted);
+      const due = effectiveNextDueDate(m, lastCompleted, activeByMember.get(m.id));
       return { teamMember: m, nextDueDate: due };
     })
-    .filter((x: { nextDueDate: Date }) => x.nextDueDate >= start && x.nextDueDate <= end);
+    .filter((x: { nextDueDate: Date }) => x.nextDueDate >= startDate && x.nextDueDate <= endDate);
 
   res.json({
-    weekStart: start,
-    weekEnd: end,
+    weekStart: startDate,
+    weekEnd: endDate,
     overdue,
     dueThisWeek,
     upcoming,

@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { dateOnlyValue, parseDateOnlyLocal, todayDateOnly } from "@/lib/dateOnly";
 import {
   Select,
   SelectContent,
@@ -31,17 +32,15 @@ import {
 } from "@/components/ui/select";
 
 function localScheduleValue(value: string): { date: string; time: string } {
-  const candidate = new Date(value);
-  const scheduled =
-    Number.isNaN(candidate.getTime()) || candidate.getTime() <= Date.now()
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000)
-      : candidate;
+  let date = dateOnlyValue(value);
+  let scheduled = parseDateOnlyLocal(date);
   scheduled.setHours(10, 0, 0, 0);
-  const local = new Date(
-    scheduled.getTime() - scheduled.getTimezoneOffset() * 60 * 1000
-  );
-  const [date, time] = local.toISOString().slice(0, 16).split("T");
-  return { date, time };
+  if (Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()) {
+    scheduled = new Date();
+    scheduled.setDate(scheduled.getDate() + 1);
+    date = todayDateOnly(scheduled);
+  }
+  return { date, time: "10:00" };
 }
 
 export function ScheduleCalendarDialog({

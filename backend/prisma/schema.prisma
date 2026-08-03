@@ -66,9 +66,9 @@ model Team {
   id          String    @id @default(cuid())
   name        String    @unique
   description String?
-  archivedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
 
   members TeamMember[]
 
@@ -84,14 +84,14 @@ model TeamMember {
   avatarSeed         String?
   cadence            Cadence           @default(FORTNIGHTLY)
   active             Boolean           @default(true)
-  startDate          DateTime          @default(now())
+  startDate          DateTime          @default(now()) @db.Date
   notes              String?
-  checkInsPausedAt   DateTime?
-  checkInsResumeOn   DateTime?
+  checkInsPausedAt   DateTime?         @db.Timestamptz(3)
+  checkInsResumeOn   DateTime?         @db.Date
   checkInsHoldReason String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  deletedAt          DateTime?
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?         @db.Timestamptz(3)
   deletedBy          String?
   cliftonStrengths   CliftonStrength[] @default([])
   teamId             String?
@@ -111,8 +111,8 @@ model CheckIn {
   teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
   teamMemberId String
 
-  scheduledDate DateTime
-  completedAt   DateTime?
+  scheduledDate DateTime      @db.Date
+  completedAt   DateTime?     @db.Timestamptz(3)
   status        CheckInStatus @default(SCHEDULED)
 
   wins         String?
@@ -122,9 +122,9 @@ model CheckIn {
   privateNotes String?
   energyLevel  Int?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
 
   actionItems   ActionItem[]
   talkingPoints TalkingPoint[]
@@ -137,8 +137,8 @@ model ActionItem {
   id          String           @id @default(cuid())
   description String
   status      ActionItemStatus @default(OPEN)
-  dueDate     DateTime?
-  completedAt DateTime?
+  dueDate     DateTime? @db.Date
+  completedAt DateTime? @db.Timestamptz(3)
 
   teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
   teamMemberId String
@@ -150,9 +150,9 @@ model ActionItem {
   carriedOverFromId String?     @unique
   carriedOverTo     ActionItem? @relation("CarryOver")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
 
   @@index([teamMemberId, status])
   @@index([dueDate])
@@ -163,7 +163,7 @@ model TalkingPoint {
   id         String    @id @default(cuid())
   content    String
   resolved   Boolean   @default(false)
-  resolvedAt DateTime?
+  resolvedAt DateTime? @db.Timestamptz(3)
   recurring  Boolean   @default(false)
 
   renewedFrom   TalkingPoint? @relation("TalkingPointRenewal", fields: [renewedFromId], references: [id])
@@ -176,9 +176,9 @@ model TalkingPoint {
   checkIn   CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
   checkInId String?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
 
   @@index([teamMemberId, resolved])
   @@index([deletedAt])
@@ -191,9 +191,9 @@ model CalendarConnection {
   encryptedRefreshToken String
   scope                 String?
   calendarId            String   @default("primary")
-  connectedAt           DateTime @default(now())
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  connectedAt           DateTime @default(now()) @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
 
   events CheckInCalendarEvent[]
 }
@@ -204,11 +204,11 @@ model CheckInCalendarEvent {
   teamMemberId   String
   googleEventId  String
   htmlLink       String?
-  startsAt       DateTime
-  endsAt         DateTime
+  startsAt       DateTime @db.Timestamptz(3)
+  endsAt         DateTime @db.Timestamptz(3)
   createdByPulse Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
 
   connection CalendarConnection @relation(fields: [userEmail], references: [userEmail], onDelete: Cascade)
   teamMember TeamMember         @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)

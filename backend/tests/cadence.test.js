@@ -4,8 +4,8 @@ const { nextDueDate } = require("../dist/utils/cadence");
 
 test("monthly cadence advances by one calendar month", () => {
   assert.equal(
-    nextDueDate(new Date("2026-01-15T09:30:00.000Z"), "MONTHLY").toISOString(),
-    "2026-02-15T09:30:00.000Z"
+    nextDueDate(new Date("2026-01-15T00:00:00.000Z"), "MONTHLY").toISOString(),
+    "2026-02-15T00:00:00.000Z"
   );
 });
 

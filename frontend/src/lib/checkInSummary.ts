@@ -1,6 +1,7 @@
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { ActionItemStatus } from "@/types";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { parseDateOnlyLocal } from "@/lib/dateOnly";
 
 export const ACTION_ITEM_STATUS_LABEL: Record<ActionItemStatus, string> = {
   OPEN: "Open",
@@ -33,12 +34,7 @@ interface BuildCheckInSummaryInput {
 }
 
 function formatDueDate(dueDate: string): string {
-  // Draft form state uses a bare "yyyy-MM-dd" (local midnight); persisted API
-  // data is a full ISO datetime. Parse each so neither shifts a day under TZ.
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
-    ? parse(dueDate, "yyyy-MM-dd", new Date())
-    : new Date(dueDate);
-  return format(date, "MMM d, yyyy");
+  return format(parseDateOnlyLocal(dueDate), "MMM d, yyyy");
 }
 
 export function buildCheckInSummaryText({

@@ -68,6 +68,8 @@ Edit `.env`:
 - Leave `ALLOW_DOMAIN_ACCESS=false` for this single-user app. Setting it to `true` together
   with `ALLOWED_DOMAIN` deliberately grants every account in that domain access to the same data.
 - `JWT_SECRET` — set to a long random string (e.g. `openssl rand -hex 32`).
+- `APP_TIME_ZONE` — the IANA timezone used for due days and weekly boundaries; defaults to
+  `Pacific/Auckland`.
 - Leave the Postgres and CORS values as-is for local use, or adjust if needed.
 
 Only explicitly listed emails can log in by default. Domain-wide access requires the separate

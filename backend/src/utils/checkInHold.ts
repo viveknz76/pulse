@@ -1,4 +1,9 @@
 import { Cadence, nextDueDate } from "./cadence";
+import {
+  dateOnlyFromPrisma,
+  dateOnlyInTimeZone,
+  parseDateOnly,
+} from "./dateOnly";
 
 type HoldFields = {
   checkInsPausedAt: Date | null;
@@ -10,23 +15,38 @@ type CompletedCheckIn = {
   completedAt: Date | null;
 };
 
+type ActiveCheckIn = {
+  scheduledDate: Date;
+};
+
 export function isCheckInScheduleOnHold(
   member: HoldFields,
   reference = new Date()
 ): boolean {
   if (!member.checkInsPausedAt) return false;
-  return !member.checkInsResumeOn || member.checkInsResumeOn.getTime() > reference.getTime();
+  return !member.checkInsResumeOn ||
+    dateOnlyFromPrisma(member.checkInsResumeOn) > dateOnlyInTimeZone(reference);
 }
 
 export function effectiveNextDueDate(
   member: HoldFields & { startDate: Date; cadence: Cadence },
-  lastCompleted?: CompletedCheckIn
+  lastCompleted?: CompletedCheckIn,
+  activeCheckIn?: ActiveCheckIn
 ): Date {
+  // An in-progress check-in represents the current conversation, so its
+  // scheduled date takes precedence over the cadence-derived date.
+  if (activeCheckIn) return activeCheckIn.scheduledDate;
+
   let anchor = lastCompleted?.scheduledDate ?? member.startDate;
 
   if (member.checkInsPausedAt && member.checkInsResumeOn) {
-    const lastCompletion = lastCompleted?.completedAt ?? lastCompleted?.scheduledDate;
-    if (!lastCompletion || lastCompletion.getTime() < member.checkInsResumeOn.getTime()) {
+    const resumeDate = dateOnlyFromPrisma(member.checkInsResumeOn);
+    const lastCompletionDate = lastCompleted?.completedAt
+      ? dateOnlyInTimeZone(lastCompleted.completedAt)
+      : lastCompleted
+        ? dateOnlyFromPrisma(lastCompleted.scheduledDate)
+        : null;
+    if (!lastCompletionDate || lastCompletionDate < resumeDate) {
       return member.checkInsResumeOn;
     }
 
@@ -35,9 +55,9 @@ export function effectiveNextDueDate(
     // leaving the person immediately overdue against the old draft date.
     if (
       lastCompleted?.completedAt &&
-      lastCompleted.scheduledDate.getTime() < member.checkInsResumeOn.getTime()
+      dateOnlyFromPrisma(lastCompleted.scheduledDate) < resumeDate
     ) {
-      anchor = lastCompleted.completedAt;
+      anchor = parseDateOnly(dateOnlyInTimeZone(lastCompleted.completedAt));
     }
   }
 

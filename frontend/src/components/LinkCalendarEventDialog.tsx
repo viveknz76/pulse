@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { parseDateOnlyLocal } from "@/lib/dateOnly";
 
 function eventDate(value: string): string {
   return new Date(value).toLocaleString(undefined, {
@@ -47,7 +48,7 @@ export function LinkCalendarEventDialog({
     if (!open || !status?.connected) return;
     let ignore = false;
     setLoading(true);
-    const around = new Date(member.nextDueDate);
+    const around = parseDateOnlyLocal(member.nextDueDate);
     const aroundValue = Number.isNaN(around.getTime()) ? new Date() : around;
     api
       .get<CalendarEventCandidate[]>(

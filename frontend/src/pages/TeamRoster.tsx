@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateOnly } from "@/lib/dateOnly";
 
 const CADENCE_LABELS: Record<Cadence, string> = {
   WEEKLY: "Weekly",
@@ -166,8 +167,8 @@ export default function TeamRoster() {
                   <TableCell>{CADENCE_LABELS[member.cadence]}</TableCell>
                   <TableCell>
                     {member.checkInsOnHold && member.checkInsResumeOn
-                      ? `Returns ${new Date(member.checkInsResumeOn).toLocaleDateString()}`
-                      : new Date(member.nextDueDate).toLocaleDateString()}
+                      ? `Returns ${formatDateOnly(member.checkInsResumeOn)}`
+                      : formatDateOnly(member.nextDueDate)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={member.checkInsOnHold ? "warning" : member.active ? "success" : "secondary"}>

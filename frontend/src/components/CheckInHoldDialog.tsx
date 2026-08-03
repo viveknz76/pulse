@@ -6,6 +6,7 @@ import { TeamMember } from "../types";
 import { DatePicker } from "./DatePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { parseDateOnlyLocal, todayDateOnly } from "@/lib/dateOnly";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,7 @@ export function CheckInHoldDialog({
 
   useEffect(() => {
     if (!open) return;
-    setReturnDate(format(addDays(new Date(), 7), DATE_FORMAT));
+    setReturnDate(format(addDays(parseDateOnlyLocal(todayDateOnly()), 7), DATE_FORMAT));
     setReason("On leave");
   }, [open, member]);
 
@@ -42,8 +43,7 @@ export function CheckInHoldDialog({
     event.preventDefault();
     if (!member || !returnDate) return;
 
-    const resumeOn = new Date(`${returnDate}T00:00:00`);
-    if (resumeOn.getTime() <= Date.now()) {
+    if (returnDate <= todayDateOnly()) {
       toast.error("Choose a return date after today.");
       return;
     }
@@ -51,7 +51,7 @@ export function CheckInHoldDialog({
     setSaving(true);
     try {
       await api.post(`/api/team-members/${member.id}/check-in-hold`, {
-        resumeOn: resumeOn.toISOString(),
+        resumeOn: returnDate,
         reason: reason.trim() || "On leave",
       });
       toast.success(`${member.name}'s check-ins are on hold`);

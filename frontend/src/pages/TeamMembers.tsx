@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateOnly } from "@/lib/dateOnly";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -220,8 +221,8 @@ export default function TeamMembers() {
                   <TableCell>{CADENCE_LABELS[m.cadence]}</TableCell>
                   <TableCell>
                     {m.checkInsOnHold && m.checkInsResumeOn
-                      ? `Returns ${new Date(m.checkInsResumeOn).toLocaleDateString()}`
-                      : new Date(m.nextDueDate).toLocaleDateString()}
+                      ? `Returns ${formatDateOnly(m.checkInsResumeOn)}`
+                      : formatDateOnly(m.nextDueDate)}
                   </TableCell>
                   <TableCell>
                     <Badge

@@ -14,7 +14,7 @@ export function cadenceDays(cadence: Exclude<Cadence, "MONTHLY">): number {
 
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
-  result.setDate(result.getDate() + days);
+  result.setUTCDate(result.getUTCDate() + days);
   return result;
 }
 
@@ -42,19 +42,4 @@ export function nextDueDate(fromDate: Date, cadence: Cadence): Date {
     return addCalendarMonths(fromDate, 1);
   }
   return addDays(fromDate, cadenceDays(cadence));
-}
-
-/** Start (Mon 00:00) and end (Sun 23:59:59) of the current week, local time. */
-export function currentWeekRange(reference: Date = new Date()): { start: Date; end: Date } {
-  const day = reference.getDay(); // 0 = Sunday
-  const diffToMonday = (day + 6) % 7; // days since most recent Monday
-  const start = new Date(reference);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - diffToMonday);
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  end.setMilliseconds(-1);
-
-  return { start, end };
 }

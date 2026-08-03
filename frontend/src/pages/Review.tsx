@@ -8,6 +8,7 @@ import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
 import { IconActionButton, IconLinkAction } from "../components/IconActionButton";
+import { formatDateOnly } from "@/lib/dateOnly";
 
 const CARD_CLASS =
   "rounded-xl border border-border bg-card px-5";
@@ -39,7 +40,7 @@ function ActionItemRow({ item, onChanged }: { item: ActionItem; onChanged: () =>
         <span>{item.description}</span>
         {item.dueDate && (
           <span className="text-muted-foreground">
-            — due {new Date(item.dueDate).toLocaleDateString()}
+            — due {formatDateOnly(item.dueDate)}
           </span>
         )}
       </div>
@@ -90,7 +91,7 @@ export default function Review() {
       <div className="mb-8">
         <PageTitle className="mb-1.5">Weekly review</PageTitle>
         <p className="text-[0.9rem] text-[var(--muted-foreground-2)]">
-          {new Date(data.weekStart).toLocaleDateString()} – {new Date(data.weekEnd).toLocaleDateString()}
+          {formatDateOnly(data.weekStart)} – {formatDateOnly(data.weekEnd)}
         </p>
       </div>
 
@@ -107,7 +108,7 @@ export default function Review() {
                   {teamMember.name}
                 </Link>{" "}
                 <span className="text-muted-foreground">
-                  — due {new Date(nextDueDate).toLocaleDateString()}
+                  — due {formatDateOnly(nextDueDate)}
                 </span>
               </li>
             ))}

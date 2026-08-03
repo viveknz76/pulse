@@ -28,6 +28,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-checkin}:${POSTGRES_PASSWORD:-checkin}@db:5432/${POSTGRES_DB:-checkin}?schema=public
       PORT: 4000
+      APP_TIME_ZONE: ${APP_TIME_ZONE:-Pacific/Auckland}
       JWT_SECRET: ${JWT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -53,6 +54,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_APP_TIME_ZONE: ${APP_TIME_ZONE:-Pacific/Auckland}
     container_name: checkin-frontend
     restart: unless-stopped
     depends_on:

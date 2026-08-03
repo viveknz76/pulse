@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { api } from "../api/client";
 import { CheckIn } from "../types";
 import { DatePicker } from "./DatePicker";
 import { Button } from "@/components/ui/button";
+import { dateOnlyValue, parseDateOnlyLocal, todayDateOnly } from "@/lib/dateOnly";
 import {
   Dialog,
   DialogContent,
@@ -13,15 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-function toLocalDateInput(value: string): string {
-  return format(new Date(value), "yyyy-MM-dd");
-}
-
-function localDateStart(dateValue: string): string {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  return new Date(year, month - 1, day).toISOString();
-}
 
 export function CheckInDateDialog({
   checkIn,
@@ -38,15 +29,14 @@ export function CheckInDateDialog({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open && checkIn) setDate(toLocalDateInput(checkIn.scheduledDate));
+    if (open && checkIn) setDate(dateOnlyValue(checkIn.scheduledDate));
   }, [open, checkIn]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!checkIn || !date) return;
 
-    const scheduledDate = localDateStart(date);
-    if (new Date(scheduledDate).getTime() > Date.now()) {
+    if (date > todayDateOnly()) {
       toast.error("Choose today or an earlier date.");
       return;
     }
@@ -54,7 +44,7 @@ export function CheckInDateDialog({
     setSaving(true);
     try {
       const updated = await api.patch<CheckIn>(`/api/check-ins/${checkIn.id}/date`, {
-        scheduledDate,
+        scheduledDate: date,
       });
       toast.success("Check-in date updated");
       onSaved(updated);
@@ -82,7 +72,7 @@ export function CheckInDateDialog({
               value={date}
               onChange={setDate}
               className="w-full"
-              maxDate={new Date()}
+              maxDate={parseDateOnlyLocal(todayDateOnly())}
             />
           </div>
 

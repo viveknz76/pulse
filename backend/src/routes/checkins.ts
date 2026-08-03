@@ -6,6 +6,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import { MailerNotConfiguredError, sendCheckInSummaryEmail } from "../utils/mailer";
 import { shouldCreateRecurringSuccessor } from "../utils/talkingPointRecurrence";
 import { isCheckInScheduleOnHold } from "../utils/checkInHold";
+import { DATE_ONLY_PATTERN, dateOnlyInTimeZone, parseDateOnly } from "../utils/dateOnly";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const actionItemInput = z.object({
   id: z.string().optional(), // present if updating an existing (e.g. carried-over) item
   description: z.string().min(1),
   status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]).default("OPEN"),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z.string().regex(DATE_ONLY_PATTERN).optional().nullable(),
 });
 
 const talkingPointInput = z.object({
@@ -30,11 +31,11 @@ const talkingPointInput = z.object({
 
 const createSchema = z.object({
   teamMemberId: z.string().min(1),
-  scheduledDate: z.string().datetime(),
+  scheduledDate: z.string().regex(DATE_ONLY_PATTERN),
 });
 
 const dateSchema = z.object({
-  scheduledDate: z.string().datetime(),
+  scheduledDate: z.string().regex(DATE_ONLY_PATTERN),
 });
 
 const privateNoteSchema = z.object({
@@ -124,7 +125,7 @@ async function applyCheckInUpdate(
         const itemData = {
           description: item.description,
           status: item.status,
-          dueDate: item.dueDate ? new Date(item.dueDate) : null,
+          dueDate: item.dueDate ? parseDateOnly(item.dueDate) : null,
           completedAt: item.status === "DONE" ? new Date() : null,
         };
 
@@ -161,7 +162,7 @@ async function applyCheckInUpdate(
           data: {
             description: item.description,
             status: item.status,
-            dueDate: item.dueDate ? new Date(item.dueDate) : null,
+            dueDate: item.dueDate ? parseDateOnly(item.dueDate) : null,
             completedAt: item.status === "DONE" ? new Date() : null,
             teamMemberId: checkIn.teamMemberId,
             checkInId: checkIn.id,
@@ -311,8 +312,8 @@ router.patch("/:id/date", asyncHandler(async (req, res) => {
   const parsed = dateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const scheduledDate = new Date(parsed.data.scheduledDate);
-  if (scheduledDate.getTime() > Date.now()) {
+  const scheduledDate = parseDateOnly(parsed.data.scheduledDate);
+  if (parsed.data.scheduledDate > dateOnlyInTimeZone()) {
     return res.status(400).json({ error: "Check-in date cannot be in the future" });
   }
 
@@ -393,7 +394,7 @@ router.post("/", asyncHandler(async (req, res) => {
     const checkIn = await prisma.checkIn.create({
       data: {
         teamMemberId: parsed.data.teamMemberId,
-        scheduledDate: new Date(parsed.data.scheduledDate),
+        scheduledDate: parseDateOnly(parsed.data.scheduledDate),
         status: "SCHEDULED",
       },
     });

@@ -3,6 +3,7 @@ import { CheckCircle2, ListChecks, TrendingUp, Trophy } from "lucide-react";
 import type { CheckIn } from "@/types";
 import { ENERGY_COLORS } from "@/lib/energyPalette";
 import { StatusDot } from "@/components/StatusDot";
+import { dateOnlyValue, formatDateOnly } from "@/lib/dateOnly";
 
 interface MomentStyle {
   label: string;
@@ -67,8 +68,7 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
     )
     .sort(
       (a, b) =>
-        new Date(b.scheduledDate).getTime() -
-        new Date(a.scheduledDate).getTime()
+        dateOnlyValue(b.scheduledDate).localeCompare(dateOnlyValue(a.scheduledDate))
     );
 
   if (moments.length === 0) {
@@ -85,7 +85,6 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
   return (
     <ol className="mb-10" aria-label="Relationship timeline">
       {moments.map((checkIn) => {
-        const date = new Date(checkIn.scheduledDate);
         const commitments = checkIn.actionItems.filter((item) => item.description.trim());
 
         return (
@@ -104,14 +103,14 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
 
             <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
               <time
-                dateTime={date.toISOString()}
+                dateTime={dateOnlyValue(checkIn.scheduledDate)}
                 className="text-sm font-semibold text-foreground"
               >
-                {date.toLocaleDateString("en-US", {
+                {formatDateOnly(checkIn.scheduledDate, {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
-                })}
+                }, "en-US")}
               </time>
               <span className="text-xs text-muted-foreground">
                 {[
@@ -156,7 +155,7 @@ export function RelationshipTimeline({ checkIns }: { checkIns: CheckIn[] }) {
                               <p className="leading-relaxed">{item.description}</p>
                               {item.dueDate && (
                                 <p className="mt-0.5 text-xs text-muted-foreground">
-                                  Due {new Date(item.dueDate).toLocaleDateString()}
+                                  Due {formatDateOnly(item.dueDate)}
                                 </p>
                               )}
                             </div>

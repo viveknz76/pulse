@@ -23,14 +23,14 @@ import { IconLinkAction } from "../components/IconActionButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { APPLICATION_TIME_ZONE, calendarDayDifference, formatDateOnly } from "@/lib/dateOnly";
 
 function isOverdue(dateStr: string): boolean {
-  return new Date(dateStr).getTime() < Date.now();
+  return calendarDayDifference(dateStr) < 0;
 }
 
 function daysUntil(dateStr: string): number {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return calendarDayDifference(dateStr);
 }
 
 function relativeDueLabel(dateStr: string): string {
@@ -40,14 +40,18 @@ function relativeDueLabel(dateStr: string): string {
   if (days === 0) return "Due today";
   if (days === 1) return "Due tomorrow";
   if (days <= 7) return `Due in ${days} days`;
-  return `Due ${new Date(dateStr).toLocaleDateString(undefined, {
+  return `Due ${formatDateOnly(dateStr, {
     month: "short",
     day: "numeric",
   })}`;
 }
 
 function greetingWord(): string {
-  const hour = new Date().getHours();
+  const hour = Number(new Intl.DateTimeFormat("en-NZ", {
+    timeZone: APPLICATION_TIME_ZONE,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date()));
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
@@ -57,7 +61,7 @@ const CARD_BASE =
   "p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-border hover:shadow-[0_12px_28px_var(--brand-glow)]";
 
 function winDateLabel(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return formatDateOnly(dateStr, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -105,10 +109,10 @@ export default function Dashboard() {
   const scheduled = active.filter((m) => !m.checkInsOnHold);
   const due = scheduled
     .filter((m) => daysUntil(m.nextDueDate) <= 3)
-    .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
+    .sort((a, b) => a.nextDueDate.localeCompare(b.nextDueDate));
   const upcoming = scheduled
     .filter((m) => daysUntil(m.nextDueDate) > 3)
-    .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
+    .sort((a, b) => a.nextDueDate.localeCompare(b.nextDueDate));
   const overdue = due.filter((m) => isOverdue(m.nextDueDate));
   const inProgress = scheduled.filter((m) => !!m.activeCheckInId);
   const onTrack = scheduled.filter((m) => !isOverdue(m.nextDueDate));
@@ -118,6 +122,7 @@ export default function Dashboard() {
   const nextConversation = due[0];
 
   const todayLabel = new Date().toLocaleDateString("en-US", {
+    timeZone: APPLICATION_TIME_ZONE,
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -440,7 +445,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">
                     {member.checkInsHoldReason || "On leave"}
                     {member.checkInsResumeOn &&
-                      ` · Returns ${new Date(member.checkInsResumeOn).toLocaleDateString()}`}
+                      ` · Returns ${formatDateOnly(member.checkInsResumeOn)}`}
                   </p>
                 </div>
                 <Badge variant="warning">Check-ins paused</Badge>

@@ -32,9 +32,15 @@ import { Input } from "@/components/ui/input";
 import { energyLevelLabel } from "@/lib/energyPulse";
 import { ScheduleCalendarDialog } from "../components/ScheduleCalendarDialog";
 import { LinkCalendarEventDialog } from "../components/LinkCalendarEventDialog";
+import {
+  calendarDayDifference,
+  dateOnlyValue,
+  formatDateOnly,
+  todayDateOnly,
+} from "@/lib/dateOnly";
 
 function dateLabel(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
+  return formatDateOnly(value, {
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -42,10 +48,7 @@ function dateLabel(value: string): string {
 }
 
 function daysSince(value: string): number {
-  return Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / (1000 * 60 * 60 * 24))
-  );
+  return Math.max(0, -calendarDayDifference(value));
 }
 
 function ContextField({
@@ -144,7 +147,7 @@ export default function CheckInPreparation() {
     }
     const checkIn = await api.post<{ id: string }>("/api/check-ins", {
       teamMemberId: member.id,
-      scheduledDate: new Date().toISOString(),
+      scheduledDate: todayDateOnly(),
     });
     navigate(`/check-ins/${checkIn.id}`);
   }
@@ -155,7 +158,7 @@ export default function CheckInPreparation() {
     .filter((checkIn) => checkIn.status === "COMPLETED")
     .sort(
       (a, b) =>
-        new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
+        dateOnlyValue(b.scheduledDate).localeCompare(dateOnlyValue(a.scheduledDate))
     );
   const lastCheckIn: CheckIn | undefined = completed[0];
   const openCommitments = (member.actionItems || []).filter((item) => item.status !== "DONE");

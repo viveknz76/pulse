@@ -11,6 +11,7 @@ import {
   isCheckInScheduleOnHold,
 } from "../utils/checkInHold";
 import { cliftonStrengthsSchema } from "../utils/cliftonStrengths";
+import { DATE_ONLY_PATTERN, dateOnlyInTimeZone, parseDateOnly } from "../utils/dateOnly";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ const createSchema = z.object({
   role: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   cadence: cadenceEnum.default("FORTNIGHTLY"),
-  startDate: z.string().datetime().optional(),
+  startDate: z.string().regex(DATE_ONLY_PATTERN).optional(),
   notes: z.string().optional(),
   cliftonStrengths: cliftonStrengthsSchema.default([]),
   teamId: z.string().cuid().nullable().optional(),
@@ -33,7 +34,7 @@ const updateSchema = createSchema.partial().extend({
 });
 
 const holdSchema = z.object({
-  resumeOn: z.string().datetime(),
+  resumeOn: z.string().regex(DATE_ONLY_PATTERN),
   reason: z.string().trim().min(1).max(160).default("On leave"),
 });
 
@@ -72,24 +73,25 @@ router.get("/", asyncHandler(async (_req, res) => {
     // so the UI can offer "Resume" instead of starting a duplicate.
     prisma.checkIn.findMany({
       where: { status: "SCHEDULED", deletedAt: null },
-      select: { id: true, teamMemberId: true },
+      select: { id: true, teamMemberId: true, scheduledDate: true },
     }),
   ]);
 
   const activeByMember = new Map(
-    activeCheckIns.map((c: { id: string; teamMemberId: string }) => [c.teamMemberId, c.id])
+    activeCheckIns.map((c: (typeof activeCheckIns)[number]) => [c.teamMemberId, c])
   );
 
   const withNextDue = members.map((m: (typeof members)[number]) => {
     const lastCompleted = m.checkIns[0];
-    const nextDue = effectiveNextDueDate(m, lastCompleted);
+    const activeCheckIn = activeByMember.get(m.id);
+    const nextDue = effectiveNextDueDate(m, lastCompleted, activeCheckIn);
     const { checkIns: _checkIns, ...rest } = m;
     return {
       ...rest,
       nextDueDate: nextDue,
       checkInsOnHold: isCheckInScheduleOnHold(m),
       lastCompletedAt: lastCompleted?.scheduledDate ?? null,
-      activeCheckInId: activeByMember.get(m.id) ?? null,
+      activeCheckInId: activeCheckIn?.id ?? null,
     };
   });
 
@@ -135,7 +137,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
   const activeCheckIn = member.checkIns.find(
     (c: (typeof member.checkIns)[number]) => c.status === "SCHEDULED"
   );
-  const nextDue = effectiveNextDueDate(member, lastCompleted);
+  const nextDue = effectiveNextDueDate(member, lastCompleted, activeCheckIn);
 
   res.json({
     ...member,
@@ -158,7 +160,7 @@ router.post("/", asyncHandler(async (req, res) => {
     data: {
       ...rest,
       email: email || null,
-      startDate: startDate ? new Date(startDate) : new Date(),
+      startDate: startDate ? parseDateOnly(startDate) : parseDateOnly(dateOnlyInTimeZone()),
     },
   });
   res.status(201).json(member);
@@ -178,7 +180,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
     data: {
       ...rest,
       ...(email !== undefined ? { email: email || null } : {}),
-      ...(startDate ? { startDate: new Date(startDate) } : {}),
+      ...(startDate ? { startDate: parseDateOnly(startDate) } : {}),
     },
   });
   res.json(member);
@@ -191,8 +193,8 @@ router.post("/:id/check-in-hold", asyncHandler(async (req, res) => {
   const parsed = holdSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const resumeOn = new Date(parsed.data.resumeOn);
-  if (resumeOn.getTime() <= Date.now()) {
+  const resumeOn = parseDateOnly(parsed.data.resumeOn);
+  if (parsed.data.resumeOn <= dateOnlyInTimeZone()) {
     return res.status(400).json({ error: "Return date must be in the future" });
   }
 
@@ -231,7 +233,7 @@ router.post("/:id/check-in-hold/resume", asyncHandler(async (req, res) => {
 
   const member = await prisma.teamMember.update({
     where: { id: req.params.id },
-    data: { checkInsResumeOn: new Date() },
+    data: { checkInsResumeOn: parseDateOnly(dateOnlyInTimeZone()) },
   });
   res.json(member);
 }));

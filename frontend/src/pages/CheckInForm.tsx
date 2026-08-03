@@ -45,6 +45,7 @@ import {
 import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 import { energyLevelLabel } from "@/lib/energyPulse";
+import { dateOnlyValue, formatDateOnly, parseDateOnlyLocal } from "@/lib/dateOnly";
 
 interface DraftActionItem {
   id?: string; // set when this is an existing action item being carried over/edited
@@ -62,7 +63,7 @@ interface DraftTalkingPoint {
 
 function toDateInput(value?: string | null): string {
   if (!value) return "";
-  return value.slice(0, 10);
+  return dateOnlyValue(value);
 }
 
 const FIELD_LABEL = "mb-2 block text-[0.88rem] font-semibold text-foreground";
@@ -296,7 +297,7 @@ export default function CheckInForm() {
     if (!checkIn) return "";
     return buildCheckInSummaryText({
       teamMemberName: checkIn.teamMember?.name || "",
-      date: new Date(checkIn.scheduledDate),
+      date: parseDateOnlyLocal(checkIn.scheduledDate),
       wins,
       challenges,
       decisions,
@@ -321,7 +322,7 @@ export default function CheckInForm() {
           id: it.id,
           description: it.description.trim(),
           status: it.status,
-          dueDate: it.dueDate ? new Date(it.dueDate).toISOString() : null,
+          dueDate: it.dueDate || null,
         })),
       talkingPoints: points
         .filter((p) => p.content.trim())
@@ -385,7 +386,7 @@ export default function CheckInForm() {
     if (!checkIn || sendingEmail) return;
     setSendingEmail(true);
     try {
-      const dateLabel = new Date(checkIn.scheduledDate).toLocaleDateString(undefined, {
+      const dateLabel = formatDateOnly(checkIn.scheduledDate, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -419,7 +420,7 @@ export default function CheckInForm() {
           className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           <CalendarDays className="size-3.5" />
-          {new Date(checkIn.scheduledDate).toLocaleDateString(undefined, {
+          {formatDateOnly(checkIn.scheduledDate, {
             month: "short",
             day: "numeric",
             year: "numeric",

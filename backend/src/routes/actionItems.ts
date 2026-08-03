@@ -2,13 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { DATE_ONLY_PATTERN, parseDateOnly } from "../utils/dateOnly";
 
 const router = Router();
 
 const updateSchema = z.object({
   description: z.string().min(1).optional(),
   status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z.string().regex(DATE_ONLY_PATTERN).optional().nullable(),
 });
 
 const listQuerySchema = z.object({
@@ -47,7 +48,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     data: {
       ...rest,
-      ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+      ...(dueDate !== undefined ? { dueDate: dueDate ? parseDateOnly(dueDate) : null } : {}),
       ...(rest.status === "DONE" ? { completedAt: new Date() } : {}),
     },
   });

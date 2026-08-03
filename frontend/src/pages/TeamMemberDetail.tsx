@@ -34,9 +34,15 @@ import { cn } from "@/lib/utils";
 import { buildCheckInSummaryText } from "@/lib/checkInSummary";
 import { energyLevelLabel } from "@/lib/energyPulse";
 import { cliftonStrengthLabel } from "@/lib/cliftonStrengths";
+import {
+  calendarDayDifference,
+  formatDateOnly,
+  parseDateOnlyLocal,
+  todayDateOnly,
+} from "@/lib/dateOnly";
 
 function timeAgo(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+  const days = Math.max(0, -calendarDayDifference(dateStr));
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
@@ -119,7 +125,7 @@ export default function TeamMemberDetail() {
     }
     const checkIn = await api.post<{ id: string }>("/api/check-ins", {
       teamMemberId: member.id,
-      scheduledDate: new Date().toISOString(),
+      scheduledDate: todayDateOnly(),
     });
     navigate(`/check-ins/${checkIn.id}`);
   }
@@ -195,7 +201,7 @@ export default function TeamMemberDetail() {
   function buildSummaryForCheckIn(c: CheckIn): string {
     return buildCheckInSummaryText({
       teamMemberName: member?.name || "",
-      date: new Date(c.scheduledDate),
+      date: parseDateOnlyLocal(c.scheduledDate),
       wins: c.wins,
       challenges: c.challenges,
       decisions: c.decisions,
@@ -216,7 +222,7 @@ export default function TeamMemberDetail() {
     if (!member || sendingSummaryIds.has(c.id)) return;
     setSendingSummaryIds((ids) => new Set(ids).add(c.id));
     try {
-      const dateLabel = new Date(c.scheduledDate).toLocaleDateString(undefined, {
+      const dateLabel = formatDateOnly(c.scheduledDate, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -323,7 +329,7 @@ export default function TeamMemberDetail() {
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {member.checkInsResumeOn
-                  ? `The next check-in will become due on ${new Date(member.checkInsResumeOn).toLocaleDateString()}.`
+                  ? `The next check-in will become due on ${formatDateOnly(member.checkInsResumeOn)}.`
                   : "Check-ins will remain paused until you resume them."}
                 {" "}Talking points, actions, and any unfinished check-in are safe.
               </p>
@@ -449,7 +455,7 @@ export default function TeamMemberDetail() {
               <span className="flex-1">{a.description}</span>
               {a.dueDate && (
                 <span className="text-sm text-muted-foreground">
-                  due {new Date(a.dueDate).toLocaleDateString()}
+                  due {formatDateOnly(a.dueDate)}
                 </span>
               )}
             </li>
@@ -486,11 +492,11 @@ export default function TeamMemberDetail() {
               <CardHeader className="flex-row items-start justify-between">
                 <div>
                   <CardTitle>
-                    {new Date(date).toLocaleDateString("en-US", {
+                    {formatDateOnly(date, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}
+                    }, "en-US")}
                   </CardTitle>
                   <CardDescription>{timeAgo(date)}</CardDescription>
                 </div>
@@ -576,7 +582,7 @@ export default function TeamMemberDetail() {
                               <span className="flex-1">{a.description}</span>
                               {a.dueDate && (
                                 <span className="text-xs text-muted-foreground">
-                                  due {new Date(a.dueDate).toLocaleDateString()}
+                                  due {formatDateOnly(a.dueDate)}
                                 </span>
                               )}
                             </div>
