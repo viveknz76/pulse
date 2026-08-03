@@ -5,7 +5,7 @@ import { ArrowLeft, Camera, Check, ChevronDown, Trash2 } from "lucide-react";
 import { api } from "../api/client";
 import { avatarChoiceSeeds } from "../lib/avatarIcons";
 import { CLIFTON_STRENGTH_OPTIONS } from "../lib/cliftonStrengths";
-import { Cadence, CliftonStrength, TeamMember } from "../types";
+import { Cadence, CliftonStrength, Team, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle } from "../components/Typography";
@@ -33,7 +33,9 @@ export default function EditTeamMember() {
     email: "",
     cadence: "FORTNIGHTLY" as Cadence,
     notes: "",
+    teamId: "",
   });
+  const [teams, setTeams] = useState<Team[]>([]);
   const [saving, setSaving] = useState(false);
   const [strengths, setStrengths] = useState<StrengthSelection[]>([""]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -47,16 +49,21 @@ export default function EditTeamMember() {
     if (!id) return;
     let ignore = false;
 
-    api.get<TeamMember>(`/api/team-members/${id}`)
-      .then((nextMember) => {
+    Promise.all([
+      api.get<TeamMember>(`/api/team-members/${id}`),
+      api.get<Team[]>("/api/teams"),
+    ])
+      .then(([nextMember, nextTeams]) => {
         if (ignore) return;
         setMember(nextMember);
+        setTeams(nextTeams.filter((team) => !team.archivedAt));
         setForm({
           name: nextMember.name,
           role: nextMember.role || "",
           email: nextMember.email || "",
           cadence: nextMember.cadence,
           notes: nextMember.notes || "",
+          teamId: nextMember.teamId || "",
         });
         setSelectedAvatarSeed(nextMember.avatarSeed || null);
         setStrengths(strengthSelections(nextMember.cliftonStrengths));
@@ -138,6 +145,7 @@ export default function EditTeamMember() {
         cliftonStrengths: strengths.filter(
           (strength): strength is CliftonStrength => Boolean(strength)
         ),
+        teamId: form.teamId || null,
       });
       if (avatarFile) {
         const body = new FormData();
@@ -228,6 +236,29 @@ export default function EditTeamMember() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="Optional"
                   />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Primary team</label>
+                  <Select
+                    value={form.teamId || "unassigned"}
+                    onValueChange={(value) => setForm({
+                      ...form,
+                      teamId: value === "unassigned" ? "" : value,
+                    })}
+                  >
+                    <SelectTrigger className="w-full" aria-label="Primary team">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Each person can belong to one primary team.
+                  </p>
                 </div>
               </CardContent>
             </Card>

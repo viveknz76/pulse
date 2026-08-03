@@ -139,7 +139,7 @@ export default function Dashboard() {
           </p>
         </div>
         <Button variant="outline" asChild>
-          <Link to="/team">Manage team</Link>
+          <Link to="/team">Manage people</Link>
         </Button>
       </div>
 

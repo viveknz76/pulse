@@ -4,6 +4,8 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import TeamMembers from "./pages/TeamMembers";
+import Teams from "./pages/Teams";
+import TeamRoster from "./pages/TeamRoster";
 import TeamMemberDetail from "./pages/TeamMemberDetail";
 import EditTeamMember from "./pages/EditTeamMember";
 import CheckInForm from "./pages/CheckInForm";
@@ -35,6 +37,8 @@ export default function App() {
         >
           <Route path="/" element={<Dashboard />} />
           <Route path="/team" element={<TeamMembers />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/teams/:id" element={<TeamRoster />} />
           <Route path="/team/:id" element={<TeamMemberDetail />} />
           <Route path="/team/:id/edit" element={<EditTeamMember />} />
           <Route path="/team/:id/prepare" element={<CheckInPreparation />} />

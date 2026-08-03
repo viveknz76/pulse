@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CalendarClock, History, Pencil, Play, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { api } from "../api/client";
-import { Cadence, TeamMember } from "../types";
+import { Cadence, Team, TeamMember } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle } from "../components/Typography";
@@ -26,7 +26,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const emptyForm = { name: "", role: "", email: "", cadence: "FORTNIGHTLY" as Cadence };
+const emptyForm = {
+  name: "",
+  role: "",
+  email: "",
+  cadence: "FORTNIGHTLY" as Cadence,
+  teamId: "",
+};
 
 const CADENCE_LABELS: Record<Cadence, string> = {
   WEEKLY: "Weekly",
@@ -36,6 +42,7 @@ const CADENCE_LABELS: Record<Cadence, string> = {
 
 export default function TeamMembers() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<TeamMember | null>(null);
@@ -43,7 +50,13 @@ export default function TeamMembers() {
   const navigate = useNavigate();
 
   function load() {
-    api.get<TeamMember[]>("/api/team-members").then(setMembers);
+    Promise.all([
+      api.get<TeamMember[]>("/api/team-members"),
+      api.get<Team[]>("/api/teams"),
+    ]).then(([nextMembers, nextTeams]) => {
+      setMembers(nextMembers);
+      setTeams(nextTeams.filter((team) => !team.archivedAt));
+    });
   }
 
   useEffect(load, []);
@@ -58,6 +71,7 @@ export default function TeamMembers() {
         role: form.role.trim() || undefined,
         email: form.email.trim() || undefined,
         cadence: form.cadence,
+        teamId: form.teamId || null,
       });
       toast.success(`Added ${form.name.trim()}`);
       setForm(emptyForm);
@@ -128,6 +142,20 @@ export default function TeamMembers() {
             <SelectItem value="MONTHLY">Monthly</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={form.teamId || "unassigned"}
+          onValueChange={(value) => setForm({ ...form, teamId: value === "unassigned" ? "" : value })}
+        >
+          <SelectTrigger className="w-[160px] shrink-0" aria-label="Primary team">
+            <SelectValue placeholder="Primary team" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {teams.map((team) => (
+              <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button type="submit" disabled={submitting} className="shrink-0">
           Add
         </Button>
@@ -141,6 +169,7 @@ export default function TeamMembers() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Cadence</TableHead>
                 <TableHead>Next due</TableHead>
                 <TableHead>Status</TableHead>
@@ -175,6 +204,18 @@ export default function TeamMembers() {
                         </div>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {m.deletedAt ? (
+                      m.team?.name || "Unassigned"
+                    ) : (
+                      <Link
+                        to={m.team ? `/teams/${m.team.id}` : "/teams/unassigned"}
+                        className="transition-colors hover:text-primary"
+                      >
+                        {m.team?.name || "Unassigned"}
+                      </Link>
+                    )}
                   </TableCell>
                   <TableCell>{CADENCE_LABELS[m.cadence]}</TableCell>
                   <TableCell>

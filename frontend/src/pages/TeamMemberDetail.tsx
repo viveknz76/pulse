@@ -265,6 +265,12 @@ export default function TeamMemberDetail() {
             {member.role && (
               <p className="mt-0.5 text-[0.9rem] text-[var(--muted-foreground-2)]">{member.role}</p>
             )}
+            <Link
+              to={member.team ? `/teams/${member.team.id}` : "/teams/unassigned"}
+              className="mt-1 inline-flex text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              {member.team?.name || "Unassigned"}
+            </Link>
             {member.cliftonStrengths.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Top strengths">
                 {member.cliftonStrengths.map((strength, index) => (

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, Moon, Sun } from "lucide-react";
+import { CalendarDays, Moon, Sun, UsersRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MemberAvatar } from "./MemberAvatar";
@@ -70,10 +70,11 @@ export default function Layout() {
   const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
 
-  const isTeamActive = pathname.startsWith("/team") || pathname.startsWith("/check-ins");
+  const isPeopleActive = pathname.startsWith("/team/") || pathname === "/team" || pathname.startsWith("/check-ins");
+  const isTeamsActive = pathname.startsWith("/teams");
   const isReviewActive = pathname.startsWith("/review");
   const isCalendarActive = pathname.startsWith("/calendar");
-  const isDashboardActive = !isTeamActive && !isReviewActive && !isCalendarActive;
+  const isDashboardActive = !isPeopleActive && !isTeamsActive && !isReviewActive && !isCalendarActive;
 
   const name = user?.name || user?.email || "";
 
@@ -86,9 +87,13 @@ export default function Layout() {
             <DashboardIcon />
             Dashboard
           </NavItem>
-          <NavItem to="/team" active={isTeamActive}>
+          <NavItem to="/team" active={isPeopleActive}>
             <TeamIcon />
-            Team
+            People
+          </NavItem>
+          <NavItem to="/teams" active={isTeamsActive}>
+            <UsersRound className="size-[17px]" />
+            Teams
           </NavItem>
           <NavItem to="/review" active={isReviewActive}>
             <ReviewIcon />

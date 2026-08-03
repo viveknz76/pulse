@@ -6,6 +6,16 @@ export type Cadence = "WEEKLY" | "FORTNIGHTLY" | "MONTHLY";
 export type CheckInStatus = "SCHEDULED" | "COMPLETED" | "SKIPPED";
 export type ActionItemStatus = "OPEN" | "IN_PROGRESS" | "DONE";
 
+export interface Team {
+  id: string;
+  name: string;
+  description?: string | null;
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+}
+
 export interface TeamMember {
   id: string;
   name: string;
@@ -27,6 +37,8 @@ export interface TeamMember {
   deletedAt?: string | null;
   deletedBy?: string | null;
   cliftonStrengths: CliftonStrength[];
+  teamId?: string | null;
+  team?: Pick<Team, "id" | "name" | "archivedAt"> | null;
   checkIns?: CheckIn[];
   actionItems?: ActionItem[];
   talkingPoints?: TalkingPoint[];

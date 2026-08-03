@@ -62,6 +62,19 @@ enum CliftonStrength {
   WOO
 }
 
+model Team {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  members TeamMember[]
+
+  @@index([archivedAt])
+}
+
 model TeamMember {
   id                 String            @id @default(cuid())
   name               String
@@ -81,6 +94,8 @@ model TeamMember {
   deletedAt          DateTime?
   deletedBy          String?
   cliftonStrengths   CliftonStrength[] @default([])
+  teamId             String?
+  team               Team?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   checkIns       CheckIn[]
   actionItems    ActionItem[]
@@ -88,6 +103,7 @@ model TeamMember {
   calendarEvents CheckInCalendarEvent[]
 
   @@index([deletedAt])
+  @@index([teamId])
 }
 
 model CheckIn {

@@ -24,6 +24,7 @@ const createSchema = z.object({
   startDate: z.string().datetime().optional(),
   notes: z.string().optional(),
   cliftonStrengths: cliftonStrengthsSchema.default([]),
+  teamId: z.string().cuid().nullable().optional(),
 });
 
 const updateSchema = createSchema.partial().extend({
@@ -36,6 +37,15 @@ const holdSchema = z.object({
   reason: z.string().trim().min(1).max(160).default("On leave"),
 });
 
+async function isAssignableTeam(teamId: string | null | undefined) {
+  if (!teamId) return true;
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, archivedAt: null },
+    select: { id: true },
+  });
+  return Boolean(team);
+}
+
 // GET /api/team-members  — list all, each with computed "next due" date.
 // Includes soft-deleted members (the Team page shows them with a "Deleted"
 // status for an audit trail) — consumers that only want active people
@@ -45,6 +55,7 @@ router.get("/", asyncHandler(async (_req, res) => {
     prisma.teamMember.findMany({
       orderBy: { name: "asc" },
       include: {
+        team: { select: { id: true, name: true, archivedAt: true } },
         checkIns: {
           where: { status: "COMPLETED", deletedAt: null },
           orderBy: { scheduledDate: "desc" },
@@ -90,6 +101,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
   const member = await prisma.teamMember.findUnique({
     where: { id: req.params.id },
     include: {
+      team: { select: { id: true, name: true, archivedAt: true } },
       checkIns: {
         where: { deletedAt: null },
         orderBy: { scheduledDate: "desc" },
@@ -137,6 +149,9 @@ router.get("/:id", asyncHandler(async (req, res) => {
 router.post("/", asyncHandler(async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  if (!await isAssignableTeam(parsed.data.teamId)) {
+    return res.status(400).json({ error: "Choose an active team" });
+  }
 
   const { email, startDate, ...rest } = parsed.data;
   const member = await prisma.teamMember.create({
@@ -153,6 +168,9 @@ router.post("/", asyncHandler(async (req, res) => {
 router.patch("/:id", asyncHandler(async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  if (!await isAssignableTeam(parsed.data.teamId)) {
+    return res.status(400).json({ error: "Choose an active team" });
+  }
 
   const { startDate, email, ...rest } = parsed.data;
   const member = await prisma.teamMember.update({

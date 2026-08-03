@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth";
 import teamMemberRoutes from "./routes/teamMembers";
+import teamRoutes from "./routes/teams";
 import checkInRoutes from "./routes/checkins";
 import actionItemRoutes from "./routes/actionItems";
 import talkingPointRoutes from "./routes/talkingPoints";
@@ -33,6 +34,7 @@ app.use("/uploads", requireAuth, express.static(avatarUploadDir));
 
 // Everything below requires an authenticated session.
 app.use("/api/team-members", requireAuth, teamMemberRoutes);
+app.use("/api/teams", requireAuth, teamRoutes);
 app.use("/api/check-ins", requireAuth, checkInRoutes);
 app.use("/api/action-items", requireAuth, actionItemRoutes);
 app.use("/api/talking-points", requireAuth, talkingPointRoutes);
