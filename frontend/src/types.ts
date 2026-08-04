@@ -71,6 +71,8 @@ export interface PrivateWin {
 export interface TalkingPoint {
   id: string;
   content: string;
+  notes?: string | null;
+  previousNote?: string | null;
   resolved: boolean;
   resolvedAt?: string | null;
   recurring: boolean;

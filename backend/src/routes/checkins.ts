@@ -25,6 +25,7 @@ const actionItemInput = z.object({
 const talkingPointInput = z.object({
   id: z.string().optional(), // present if updating an existing (e.g. carried-over) point
   content: z.string().min(1),
+  notes: z.string().max(10000).optional().nullable(),
   resolved: z.boolean().default(false),
   recurring: z.boolean().default(false),
 });
@@ -188,6 +189,7 @@ async function applyCheckInUpdate(
           where: { id: existing.id },
           data: {
             content: point.content,
+            notes: point.notes?.trim() || null,
             resolved: point.resolved,
             resolvedAt: point.resolved ? new Date() : null,
             recurring: point.recurring,
@@ -202,6 +204,7 @@ async function applyCheckInUpdate(
         const savedPoint = await tx.talkingPoint.create({
           data: {
             content: point.content,
+            notes: point.notes?.trim() || null,
             resolved: point.resolved,
             resolvedAt: point.resolved ? new Date() : null,
             recurring: point.recurring,

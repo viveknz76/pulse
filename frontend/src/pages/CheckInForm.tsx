@@ -10,6 +10,7 @@ import {
   Gauge,
   ListChecks,
   NotebookPen,
+  NotebookText,
   Mail,
   MessagesSquare,
   Repeat2,
@@ -25,6 +26,7 @@ import { PageLoading } from "../components/PageLoading";
 import { IconActionButton } from "../components/IconActionButton";
 import { DatePicker } from "../components/DatePicker";
 import { CheckInDateDialog } from "../components/CheckInDateDialog";
+import { TalkingPointNoteDialog } from "../components/TalkingPointNoteDialog";
 import { CompletionCelebration } from "../components/CompletionCelebration";
 import { EnergyPulse } from "../components/EnergyPulse";
 import { GuidedJourney, JourneyStep } from "../components/GuidedJourney";
@@ -57,6 +59,7 @@ interface DraftActionItem {
 interface DraftTalkingPoint {
   id?: string; // set when this is an existing (e.g. carried-over) talking point
   content: string;
+  notes: string;
   resolved: boolean;
   recurring: boolean;
 }
@@ -178,6 +181,7 @@ export default function CheckInForm() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [editingDate, setEditingDate] = useState(false);
+  const [noteDialogIndex, setNoteDialogIndex] = useState<number | null>(null);
 
   const loadCheckIn = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     if (!id) return;
@@ -228,6 +232,7 @@ export default function CheckInForm() {
       [...alreadyHerePoints, ...priorOpenPoints].map((t) => ({
         id: t.id,
         content: t.content,
+        notes: t.notes || "",
         resolved: t.resolved,
         recurring: t.recurring,
       }))
@@ -273,7 +278,7 @@ export default function CheckInForm() {
   function addPoint() {
     setPoints((current) => [
       ...current,
-      { content: "", resolved: false, recurring: false },
+      { content: "", notes: "", resolved: false, recurring: false },
     ]);
   }
 
@@ -329,6 +334,7 @@ export default function CheckInForm() {
         .map((p) => ({
           id: p.id,
           content: p.content.trim(),
+          notes: p.notes.trim() || null,
           resolved: p.resolved,
           recurring: p.recurring,
         })),
@@ -475,6 +481,12 @@ export default function CheckInForm() {
                     placeholder="Something worth talking about"
                     value={point.content}
                     onChange={(e) => updatePoint(index, { content: e.target.value })}
+                  />
+                  <IconActionButton
+                    label={point.notes.trim() ? "Edit note" : "Add note"}
+                    icon={<NotebookText />}
+                    variant={point.notes.trim() ? "primary" : "default"}
+                    onClick={() => setNoteDialogIndex(index)}
                   />
                   <IconActionButton
                     label="Remove talking point"
@@ -747,6 +759,16 @@ export default function CheckInForm() {
         open={editingDate}
         onOpenChange={setEditingDate}
         onSaved={setCheckIn}
+      />
+
+      <TalkingPointNoteDialog
+        open={noteDialogIndex !== null}
+        onOpenChange={(open) => !open && setNoteDialogIndex(null)}
+        pointContent={noteDialogIndex !== null ? points[noteDialogIndex]?.content ?? "" : ""}
+        initialNotes={noteDialogIndex !== null ? points[noteDialogIndex]?.notes ?? "" : ""}
+        onSave={(notes) => {
+          if (noteDialogIndex !== null) updatePoint(noteDialogIndex, { notes });
+        }}
       />
 
       <Dialog open={summaryOpen} onOpenChange={(open) => !open && handleSummaryClose()}>

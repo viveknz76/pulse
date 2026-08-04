@@ -162,6 +162,7 @@ model ActionItem {
 model TalkingPoint {
   id         String    @id @default(cuid())
   content    String
+  notes      String?
   resolved   Boolean   @default(false)
   resolvedAt DateTime? @db.Timestamptz(3)
   recurring  Boolean   @default(false)

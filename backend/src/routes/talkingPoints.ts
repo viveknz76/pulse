@@ -14,6 +14,7 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   content: z.string().min(1).optional(),
+  notes: z.string().max(10000).optional().nullable(),
   resolved: z.boolean().optional(),
   recurring: z.boolean().optional(),
 });

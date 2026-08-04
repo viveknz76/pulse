@@ -8,6 +8,7 @@ import {
   Lightbulb,
   ListChecks,
   NotebookPen,
+  NotebookText,
   MessageCircleMore,
   Repeat2,
   Sparkles,
@@ -375,15 +376,28 @@ export default function CheckInPreparation() {
                   {talkingPoints.map((point) => (
                     <li
                       key={point.id}
-                      className="flex items-start gap-2.5 border-t border-border py-3.5 text-sm first:border-t-0"
+                      className="border-t border-border py-3.5 text-sm first:border-t-0"
                     >
-                      <MessageCircleMore className="mt-0.5 size-4 shrink-0 text-brand-strong" />
-                      <span className="min-w-0 flex-1">{point.content}</span>
-                      {point.recurring && (
-                        <Badge variant="secondary">
-                          <Repeat2 />
-                          Every check-in
-                        </Badge>
+                      <div className="flex items-start gap-2.5">
+                        <MessageCircleMore className="mt-0.5 size-4 shrink-0 text-brand-strong" />
+                        <span className="min-w-0 flex-1">{point.content}</span>
+                        {point.recurring && (
+                          <Badge variant="secondary">
+                            <Repeat2 />
+                            Every check-in
+                          </Badge>
+                        )}
+                      </div>
+                      {point.previousNote && (
+                        <div className="mt-2 ml-6 rounded-lg border border-border bg-overlay-subtle p-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                            <NotebookText className="size-3" />
+                            Note from last time
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-line">
+                            {point.previousNote}
+                          </p>
+                        </div>
                       )}
                     </li>
                   ))}

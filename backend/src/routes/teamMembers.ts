@@ -126,6 +126,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
           OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
         },
         orderBy: { createdAt: "asc" },
+        include: { renewedFrom: { select: { notes: true } } },
       },
     },
   });
@@ -139,8 +140,14 @@ router.get("/:id", asyncHandler(async (req, res) => {
   );
   const nextDue = effectiveNextDueDate(member, lastCompleted, activeCheckIn);
 
+  const talkingPointsWithPreviousNote = member.talkingPoints.map((point) => {
+    const { renewedFrom, ...rest } = point;
+    return { ...rest, previousNote: renewedFrom?.notes?.trim() || null };
+  });
+
   res.json({
     ...member,
+    talkingPoints: talkingPointsWithPreviousNote,
     nextDueDate: nextDue,
     checkInsOnHold: isCheckInScheduleOnHold(member),
     activeCheckInId: activeCheckIn?.id ?? null,
