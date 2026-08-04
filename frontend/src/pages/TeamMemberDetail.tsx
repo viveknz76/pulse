@@ -22,6 +22,7 @@ import { PageTitle, SectionLabel } from "../components/Typography";
 import { StatusDot } from "../components/StatusDot";
 import { IconActionButton } from "../components/IconActionButton";
 import { RelationshipTimeline } from "../components/RelationshipTimeline";
+import { EnergyHistoryCard } from "../components/EnergyHistoryCard";
 import { CheckInHoldDialog } from "../components/CheckInHoldDialog";
 import { CheckInDateDialog } from "../components/CheckInDateDialog";
 import { PrivateNoteDialog } from "../components/PrivateNoteDialog";
@@ -464,6 +465,8 @@ export default function TeamMemberDetail() {
       )}
 
       <section id="check-in-history" className="scroll-mt-6">
+        <EnergyHistoryCard checkIns={completedCheckIns} />
+
         <SectionLabel className="mb-2">Relationship timeline</SectionLabel>
         <p className="mb-5 text-sm text-muted-foreground">
           The moments shaping your work together—wins, decisions, growth, and commitments.

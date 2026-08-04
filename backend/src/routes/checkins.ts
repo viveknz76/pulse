@@ -257,40 +257,44 @@ router.get("/", asyncHandler(async (req, res) => {
 // A deliberately small projection for the private dashboard wall. Only
 // completed, non-deleted check-ins contribute, and no other check-in notes
 // are exposed by this endpoint.
+// One card per active team member, drawn from their most recent completed
+// check-in. If that check-in has no "wins" text, the entry is still included
+// (text: null) so the frontend can render a soft placeholder rather than
+// silently dropping that person from the wall.
 router.get("/wins", asyncHandler(async (_req, res) => {
-  const checkIns = await prisma.checkIn.findMany({
-    where: {
-      status: "COMPLETED",
-      deletedAt: null,
-      wins: { not: null },
-      teamMember: { deletedAt: null },
-    },
-    orderBy: { scheduledDate: "desc" },
-    take: 24,
+  const members = await prisma.teamMember.findMany({
+    where: { active: true, deletedAt: null },
     select: {
       id: true,
-      wins: true,
-      scheduledDate: true,
-      teamMember: {
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true,
-          avatarSeed: true,
-        },
+      name: true,
+      avatarUrl: true,
+      avatarSeed: true,
+      checkIns: {
+        where: { status: "COMPLETED", deletedAt: null },
+        orderBy: { scheduledDate: "desc" },
+        take: 1,
+        select: { id: true, wins: true, scheduledDate: true },
       },
     },
   });
 
-  const wins = checkIns
-    .filter((checkIn) => checkIn.wins?.trim())
-    .slice(0, 12)
-    .map((checkIn) => ({
-      id: checkIn.id,
-      text: checkIn.wins!.trim(),
-      date: checkIn.scheduledDate,
-      teamMember: checkIn.teamMember,
-    }));
+  const wins = members
+    .filter((member) => member.checkIns.length > 0)
+    .map((member) => {
+      const latest = member.checkIns[0];
+      return {
+        id: latest.id,
+        text: latest.wins?.trim() || null,
+        date: latest.scheduledDate,
+        teamMember: {
+          id: member.id,
+          name: member.name,
+          avatarUrl: member.avatarUrl,
+          avatarSeed: member.avatarSeed,
+        },
+      };
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   res.json(wins);
 }));

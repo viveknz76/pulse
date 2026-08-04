@@ -63,7 +63,7 @@ export interface CheckIn {
 
 export interface PrivateWin {
   id: string;
-  text: string;
+  text: string | null;
   date: string;
   teamMember: Pick<TeamMember, "id" | "name" | "avatarUrl" | "avatarSeed">;
 }

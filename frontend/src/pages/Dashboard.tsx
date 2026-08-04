@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   CalendarClock,
   CheckCircle2,
+  CircleDashed,
   Clock3,
   LockKeyhole,
   PartyPopper,
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { APPLICATION_TIME_ZONE, calendarDayDifference, formatDateOnly } from "@/lib/dateOnly";
+import { cn } from "@/lib/utils";
 
 function isOverdue(dateStr: string): boolean {
   return calendarDayDifference(dateStr) < 0;
@@ -103,6 +105,8 @@ export default function Dashboard() {
   }, []);
 
   if (!members || !wins) return <PageLoading />;
+
+  const winsWithText = wins.filter((w) => w.text);
 
   const active = members.filter((m) => m.active && !m.deletedAt);
   const onHold = active.filter((m) => m.checkInsOnHold);
@@ -312,9 +316,9 @@ export default function Dashboard() {
               A quiet place to remember what’s going well.
             </p>
           </div>
-          {wins.length > 0 && (
+          {winsWithText.length > 0 && (
             <span className="text-xs font-medium text-muted-foreground">
-              {wins.length} {wins.length === 1 ? "moment" : "moments"} worth keeping
+              {winsWithText.length} {winsWithText.length === 1 ? "moment" : "moments"} worth keeping
             </span>
           )}
         </div>
@@ -324,19 +328,37 @@ export default function Dashboard() {
             {wins.map((win, index) => (
               <Card
                 key={win.id}
-                className="flex h-full flex-col overflow-hidden bg-card p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_32px_var(--brand-glow)]"
+                className={cn(
+                  "flex h-full flex-col overflow-hidden p-5 transition-all duration-200",
+                  win.text
+                    ? "bg-card hover:-translate-y-1 hover:shadow-[0_14px_32px_var(--brand-glow)]"
+                    : "border-dashed bg-card/65"
+                )}
               >
                 <div
                   className="mb-3 flex size-9 items-center justify-center rounded-xl"
-                  style={{
-                    color: ENERGY_COLORS[index % ENERGY_COLORS.length],
-                    background: `color-mix(in srgb, ${ENERGY_COLORS[index % ENERGY_COLORS.length]} 12%, transparent)`,
-                  }}
+                  style={
+                    win.text
+                      ? {
+                          color: ENERGY_COLORS[index % ENERGY_COLORS.length],
+                          background: `color-mix(in srgb, ${ENERGY_COLORS[index % ENERGY_COLORS.length]} 12%, transparent)`,
+                        }
+                      : undefined
+                  }
                 >
-                  <Quote className="size-4" fill="currentColor" aria-hidden="true" />
+                  {win.text ? (
+                    <Quote className="size-4" fill="currentColor" aria-hidden="true" />
+                  ) : (
+                    <CircleDashed className="size-4 text-muted-foreground" aria-hidden="true" />
+                  )}
                 </div>
-                <p className="flex-1 text-[0.93rem] leading-relaxed font-medium whitespace-pre-line text-foreground">
-                  {win.text}
+                <p
+                  className={cn(
+                    "flex-1 text-[0.93rem] leading-relaxed whitespace-pre-line",
+                    win.text ? "font-medium text-foreground" : "text-muted-foreground italic"
+                  )}
+                >
+                  {win.text || "No update from their last check-in."}
                 </p>
                 <div className="mt-5 flex items-center gap-2.5 border-t border-black/8 pt-3.5 dark:border-white/10">
                   <MemberAvatar
