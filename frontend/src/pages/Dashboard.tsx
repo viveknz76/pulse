@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
-  CalendarClock,
   CheckCircle2,
   CircleDashed,
   Clock3,
@@ -340,9 +339,9 @@ export default function Dashboard() {
                   style={
                     win.text
                       ? {
-                          color: ENERGY_COLORS[index % ENERGY_COLORS.length],
-                          background: `color-mix(in srgb, ${ENERGY_COLORS[index % ENERGY_COLORS.length]} 12%, transparent)`,
-                        }
+                        color: ENERGY_COLORS[index % ENERGY_COLORS.length],
+                        background: `color-mix(in srgb, ${ENERGY_COLORS[index % ENERGY_COLORS.length]} 12%, transparent)`,
+                      }
                       : undefined
                   }
                 >
@@ -441,12 +440,7 @@ export default function Dashboard() {
 
       {onHold.length > 0 && (
         <section className="mt-10" aria-label="Team members on leave">
-          <div className="mb-3 flex items-center gap-2">
-            <CalendarClock className="size-4 text-muted-foreground" />
-            <SectionLabel className="mb-0">
-              On leave ({onHold.length})
-            </SectionLabel>
-          </div>
+          <SectionLabel>On leave ({onHold.length})</SectionLabel>
           <Card className="divide-y divide-border px-5">
             {onHold.map((member) => (
               <div key={member.id} className="flex items-center gap-3 py-3.5">

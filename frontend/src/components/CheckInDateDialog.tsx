@@ -27,6 +27,7 @@ export function CheckInDateDialog({
 }) {
   const [date, setDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const isCompleted = checkIn?.status === "COMPLETED";
 
   useEffect(() => {
     if (open && checkIn) setDate(dateOnlyValue(checkIn.scheduledDate));
@@ -36,7 +37,7 @@ export function CheckInDateDialog({
     event.preventDefault();
     if (!checkIn || !date) return;
 
-    if (date > todayDateOnly()) {
+    if (isCompleted && date > todayDateOnly()) {
       toast.error("Choose today or an earlier date.");
       return;
     }
@@ -59,10 +60,11 @@ export function CheckInDateDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit check-in date</DialogTitle>
+            <DialogTitle>{isCompleted ? "Edit check-in date" : "Reschedule check-in"}</DialogTitle>
             <DialogDescription>
-              Choose the date this conversation took place. This date is used in history,
-              summaries, and the next check-in calculation.
+              {isCompleted
+                ? "Choose the date this conversation took place. This date is used in history, summaries, and the next check-in calculation."
+                : "Choose when this check-in should happen. This updates your next check-in due date."}
             </DialogDescription>
           </DialogHeader>
 
@@ -72,7 +74,7 @@ export function CheckInDateDialog({
               value={date}
               onChange={setDate}
               className="w-full"
-              maxDate={parseDateOnlyLocal(todayDateOnly())}
+              maxDate={isCompleted ? parseDateOnlyLocal(todayDateOnly()) : undefined}
             />
           </div>
 

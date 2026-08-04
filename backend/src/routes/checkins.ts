@@ -313,24 +313,28 @@ router.get("/:id", asyncHandler(async (req, res) => {
 }));
 
 // PATCH /api/check-ins/:id/date
-// Updates the date the conversation occurred. completedAt remains untouched as
-// audit metadata recording when Pulse was told the check-in was complete.
+// Updates the date the conversation occurred (if completed) or is scheduled
+// to occur (if not). completedAt remains untouched as audit metadata
+// recording when Pulse was told the check-in was complete.
 router.patch("/:id/date", asyncHandler(async (req, res) => {
   const parsed = dateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const scheduledDate = parseDateOnly(parsed.data.scheduledDate);
-  if (parsed.data.scheduledDate > dateOnlyInTimeZone()) {
-    return res.status(400).json({ error: "Check-in date cannot be in the future" });
-  }
-
   const existing = await prisma.checkIn.findUnique({
     where: { id: req.params.id },
-    select: { deletedAt: true },
+    select: { deletedAt: true, status: true },
   });
   if (!existing || existing.deletedAt) {
     return res.status(404).json({ error: "Check-in not found" });
   }
+
+  // A completed conversation can't have happened in the future, but an
+  // upcoming (not yet completed) check-in is free to be rescheduled forward.
+  if (existing.status === "COMPLETED" && parsed.data.scheduledDate > dateOnlyInTimeZone()) {
+    return res.status(400).json({ error: "Check-in date cannot be in the future" });
+  }
+
+  const scheduledDate = parseDateOnly(parsed.data.scheduledDate);
 
   const checkIn = await prisma.checkIn.update({
     where: { id: req.params.id },
