@@ -1,11 +1,15 @@
+import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, Moon, Sun, UsersRound } from "lucide-react";
+import { CalendarDays, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Sun, UsersRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MemberAvatar } from "./MemberAvatar";
 import { IconActionButton } from "./IconActionButton";
-import { PulseBrand } from "./PulseBrand";
+import { PulseMark } from "./PulseBrand";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 function DashboardIcon() {
   return (
@@ -44,24 +48,41 @@ function ReviewIcon() {
 function NavItem({
   to,
   active,
-  children,
+  icon,
+  label,
+  collapsed,
 }: {
   to: string;
   active: boolean;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
 }) {
-  return (
+  const link = (
     <Link
       to={to}
+      aria-label={collapsed ? label : undefined}
       className={cn(
         "group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+        collapsed && "justify-center px-0",
         active
           ? "bg-brand-soft text-brand-strong ring-1 ring-inset ring-brand-border"
-          : "text-muted-foreground hover:translate-x-0.5 hover:bg-overlay-subtle hover:text-foreground"
+          : "text-muted-foreground hover:translate-x-0.5 hover:bg-overlay-subtle hover:text-foreground",
+        collapsed && "hover:translate-x-0"
       )}
     >
-      {children}
+      {icon}
+      {!collapsed && label}
     </Link>
+  );
+
+  if (!collapsed) return link;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -69,6 +90,13 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true"
+  );
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+  }, [collapsed]);
 
   const isPeopleActive = pathname.startsWith("/team/") || pathname === "/team" || pathname.startsWith("/check-ins");
   const isTeamsActive = pathname.startsWith("/teams");
@@ -80,41 +108,86 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen w-full gap-4 bg-background p-4 text-foreground">
-      <aside className="flex w-[var(--sidebar-width)] shrink-0 flex-col p-3">
-        <PulseBrand showTagline className="mb-8 px-1" />
+      <aside
+        className={cn(
+          "flex shrink-0 flex-col p-3 transition-[width] duration-200",
+          collapsed ? "w-[4.75rem]" : "w-[var(--sidebar-width)]"
+        )}
+      >
+        <div className={cn("mb-8", collapsed ? "flex justify-center" : "px-1")}>
+          {collapsed ? (
+            <PulseMark />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <PulseMark />
+                  <span className="text-xl font-bold tracking-[-0.035em] text-foreground">Pulse</span>
+                </div>
+                <IconActionButton
+                  label="Collapse sidebar"
+                  icon={<PanelLeftClose />}
+                  onClick={() => setCollapsed(true)}
+                />
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                Thoughtful check-ins, meaningful momentum.
+              </p>
+            </>
+          )}
+        </div>
+        {collapsed && (
+          <IconActionButton
+            label="Expand sidebar"
+            icon={<PanelLeftOpen />}
+            onClick={() => setCollapsed(false)}
+            className="mb-4 self-center"
+          />
+        )}
         <nav className="flex flex-1 flex-col gap-1">
-          <NavItem to="/" active={isDashboardActive}>
-            <DashboardIcon />
-            Dashboard
-          </NavItem>
-          <NavItem to="/team" active={isPeopleActive}>
-            <TeamIcon />
-            People
-          </NavItem>
-          <NavItem to="/teams" active={isTeamsActive}>
-            <UsersRound className="size-[17px]" />
-            Teams
-          </NavItem>
-          <NavItem to="/review" active={isReviewActive}>
-            <ReviewIcon />
-            Review
-          </NavItem>
-          <NavItem to="/calendar" active={isCalendarActive}>
-            <CalendarDays className="size-[17px]" />
-            Calendar
-          </NavItem>
+          <NavItem to="/" active={isDashboardActive} icon={<DashboardIcon />} label="Dashboard" collapsed={collapsed} />
+          <NavItem to="/team" active={isPeopleActive} icon={<TeamIcon />} label="People" collapsed={collapsed} />
+          <NavItem
+            to="/teams"
+            active={isTeamsActive}
+            icon={<UsersRound className="size-[17px]" />}
+            label="Teams"
+            collapsed={collapsed}
+          />
+          <NavItem to="/review" active={isReviewActive} icon={<ReviewIcon />} label="Review" collapsed={collapsed} />
+          <NavItem
+            to="/calendar"
+            active={isCalendarActive}
+            icon={<CalendarDays className="size-[17px]" />}
+            label="Calendar"
+            collapsed={collapsed}
+          />
         </nav>
-        <div className="flex items-center gap-2.5 border-t border-border pt-4">
-          <MemberAvatar id={name || "?"} name={name} size="sm" />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{name}</div>
-            <button
-              className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => logout()}
-            >
-              Sign out
-            </button>
-          </div>
+        <div
+          className={cn(
+            "flex items-center gap-2.5 border-t border-border pt-4",
+            collapsed && "flex-col gap-3"
+          )}
+        >
+          {collapsed ? (
+            <>
+              <MemberAvatar id={name || "?"} name={name} size="sm" />
+              <IconActionButton label="Sign out" icon={<LogOut />} onClick={() => logout()} />
+            </>
+          ) : (
+            <>
+              <MemberAvatar id={name || "?"} name={name} size="sm" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{name}</div>
+                <button
+                  className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => logout()}
+                >
+                  Sign out
+                </button>
+              </div>
+            </>
+          )}
           <IconActionButton
             label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             icon={theme === "dark" ? <Sun /> : <Moon />}
