@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { currentWeekRanges } from "../utils/dateOnly";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { AuthedRequest } from "../middleware/auth";
 import {
   effectiveNextDueDate,
   isCheckInScheduleOnHold,
@@ -11,7 +12,7 @@ import {
 const router = Router();
 
 // GET /api/review — weekly review of action items: overdue, due this week, upcoming.
-router.get("/", asyncHandler(async (_req, res) => {
+router.get("/", asyncHandler(async (req: AuthedRequest, res) => {
   const { startDate, endDate, startInstant, endInstantExclusive } = currentWeekRanges();
 
   const notDeleted: Prisma.ActionItemWhereInput = {
@@ -74,7 +75,7 @@ router.get("/", asyncHandler(async (_req, res) => {
   ]);
 
   // Team members whose next check-in is due this week.
-  const [members, activeCheckIns] = await Promise.all([
+  const [members, activeCheckIns, managerLeavePeriods] = await Promise.all([
     prisma.teamMember.findMany({
       where: { active: true, deletedAt: null },
       include: {
@@ -93,6 +94,10 @@ router.get("/", asyncHandler(async (_req, res) => {
       },
       select: { teamMemberId: true, scheduledDate: true },
     }),
+    prisma.managerLeavePeriod.findMany({
+      where: { userEmail: req.user!.email.toLowerCase() },
+      select: { startsOn: true, endsOn: true },
+    }),
   ]);
 
   const activeByMember = new Map(
@@ -106,7 +111,12 @@ router.get("/", asyncHandler(async (_req, res) => {
     .filter((m: (typeof members)[number]) => !isCheckInScheduleOnHold(m))
     .map((m: (typeof members)[number]) => {
       const lastCompleted = m.checkIns[0];
-      const due = effectiveNextDueDate(m, lastCompleted, activeByMember.get(m.id));
+      const due = effectiveNextDueDate(
+        m,
+        lastCompleted,
+        activeByMember.get(m.id),
+        managerLeavePeriods
+      );
       return { teamMember: m, nextDueDate: due };
     })
     .filter((x: { nextDueDate: Date }) => x.nextDueDate >= startDate && x.nextDueDate <= endDate);

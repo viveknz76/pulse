@@ -134,3 +134,24 @@ export interface CalendarEventCandidate {
   linkedEventId?: string | null;
   linkedTeamMember?: Pick<TeamMember, "id" | "name"> | null;
 }
+
+export interface ManagerLeavePeriod {
+  id: string;
+  startsOn: string;
+  endsOn: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ManagerLeavePreview {
+  affectedCheckIns: Array<{
+    teamMember: Pick<
+      TeamMember,
+      "id" | "name" | "role" | "avatarUrl" | "avatarSeed" | "cadence" | "team"
+    >;
+    currentDueDate: string;
+    adjustedDueDate: string;
+    activeCheckInId?: string | null;
+  }>;
+  calendarEvents: CheckInCalendarEvent[];
+}

@@ -101,3 +101,27 @@ test("an active check-in uses its scheduled date instead of the cadence date", (
 
   assert.equal(due.toISOString(), "2026-08-04T00:00:00.000Z");
 });
+
+test("manager leave skips due dates without putting the team member on hold", () => {
+  const due = effectiveNextDueDate(
+    {
+      checkInsPausedAt: null,
+      checkInsResumeOn: null,
+      startDate: new Date("2026-07-01T00:00:00.000Z"),
+      cadence: "WEEKLY",
+    },
+    {
+      scheduledDate: new Date("2026-08-04T00:00:00.000Z"),
+      completedAt: new Date("2026-08-04T01:00:00.000Z"),
+    },
+    undefined,
+    [
+      {
+        startsOn: new Date("2026-08-10T00:00:00.000Z"),
+        endsOn: new Date("2026-08-18T00:00:00.000Z"),
+      },
+    ]
+  );
+
+  assert.equal(due.toISOString(), "2026-08-25T00:00:00.000Z");
+});

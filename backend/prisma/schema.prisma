@@ -218,3 +218,14 @@ model CheckInCalendarEvent {
   @@index([teamMemberId, startsAt])
   @@index([userEmail, startsAt])
 }
+
+model ManagerLeavePeriod {
+  id        String   @id @default(cuid())
+  userEmail String
+  startsOn  DateTime @db.Date
+  endsOn    DateTime @db.Date
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([userEmail, startsOn, endsOn])
+}

@@ -51,8 +51,8 @@ async function isAssignableTeam(teamId: string | null | undefined) {
 // Includes soft-deleted members (the Team page shows them with a "Deleted"
 // status for an audit trail) — consumers that only want active people
 // (Dashboard, Review) filter deletedAt/active out themselves.
-router.get("/", asyncHandler(async (_req, res) => {
-  const [members, activeCheckIns] = await Promise.all([
+router.get("/", asyncHandler(async (req: AuthedRequest, res) => {
+  const [members, activeCheckIns, managerLeavePeriods] = await Promise.all([
     prisma.teamMember.findMany({
       orderBy: { name: "asc" },
       include: {
@@ -75,6 +75,10 @@ router.get("/", asyncHandler(async (_req, res) => {
       where: { status: "SCHEDULED", deletedAt: null },
       select: { id: true, teamMemberId: true, scheduledDate: true },
     }),
+    prisma.managerLeavePeriod.findMany({
+      where: { userEmail: req.user!.email.toLowerCase() },
+      select: { startsOn: true, endsOn: true },
+    }),
   ]);
 
   const activeByMember = new Map(
@@ -84,7 +88,12 @@ router.get("/", asyncHandler(async (_req, res) => {
   const withNextDue = members.map((m: (typeof members)[number]) => {
     const lastCompleted = m.checkIns[0];
     const activeCheckIn = activeByMember.get(m.id);
-    const nextDue = effectiveNextDueDate(m, lastCompleted, activeCheckIn);
+    const nextDue = effectiveNextDueDate(
+      m,
+      lastCompleted,
+      activeCheckIn,
+      managerLeavePeriods
+    );
     const { checkIns: _checkIns, ...rest } = m;
     return {
       ...rest,
@@ -99,37 +108,43 @@ router.get("/", asyncHandler(async (_req, res) => {
 }));
 
 // GET /api/team-members/:id
-router.get("/:id", asyncHandler(async (req, res) => {
-  const member = await prisma.teamMember.findUnique({
-    where: { id: req.params.id },
-    include: {
-      team: { select: { id: true, name: true, archivedAt: true } },
-      checkIns: {
-        where: { deletedAt: null },
-        orderBy: { scheduledDate: "desc" },
-        include: {
-          actionItems: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
-          talkingPoints: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+router.get("/:id", asyncHandler(async (req: AuthedRequest, res) => {
+  const [member, managerLeavePeriods] = await Promise.all([
+    prisma.teamMember.findUnique({
+      where: { id: req.params.id },
+      include: {
+        team: { select: { id: true, name: true, archivedAt: true } },
+        checkIns: {
+          where: { deletedAt: null },
+          orderBy: { scheduledDate: "desc" },
+          include: {
+            actionItems: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+            talkingPoints: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+          },
+        },
+        actionItems: {
+          where: {
+            carriedOverTo: { is: null },
+            deletedAt: null,
+            OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        talkingPoints: {
+          where: {
+            deletedAt: null,
+            OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
+          },
+          orderBy: { createdAt: "asc" },
+          include: { renewedFrom: { select: { notes: true } } },
         },
       },
-      actionItems: {
-        where: {
-          carriedOverTo: { is: null },
-          deletedAt: null,
-          OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      talkingPoints: {
-        where: {
-          deletedAt: null,
-          OR: [{ checkInId: null }, { checkIn: { deletedAt: null } }],
-        },
-        orderBy: { createdAt: "asc" },
-        include: { renewedFrom: { select: { notes: true } } },
-      },
-    },
-  });
+    }),
+    prisma.managerLeavePeriod.findMany({
+      where: { userEmail: req.user!.email.toLowerCase() },
+      select: { startsOn: true, endsOn: true },
+    }),
+  ]);
   if (!member || member.deletedAt) return res.status(404).json({ error: "Team member not found" });
 
   const lastCompleted = member.checkIns.find(
@@ -138,7 +153,12 @@ router.get("/:id", asyncHandler(async (req, res) => {
   const activeCheckIn = member.checkIns.find(
     (c: (typeof member.checkIns)[number]) => c.status === "SCHEDULED"
   );
-  const nextDue = effectiveNextDueDate(member, lastCompleted, activeCheckIn);
+  const nextDue = effectiveNextDueDate(
+    member,
+    lastCompleted,
+    activeCheckIn,
+    managerLeavePeriods
+  );
 
   const talkingPointsWithPreviousNote = member.talkingPoints.map((point) => {
     const { renewedFrom, ...rest } = point;

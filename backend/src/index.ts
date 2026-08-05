@@ -11,6 +11,7 @@ import actionItemRoutes from "./routes/actionItems";
 import talkingPointRoutes from "./routes/talkingPoints";
 import reviewRoutes from "./routes/review";
 import calendarRoutes from "./routes/calendar";
+import managerLeaveRoutes from "./routes/managerLeave";
 import { requireAuth } from "./middleware/auth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { avatarUploadDir } from "./middleware/avatarUpload";
@@ -40,6 +41,7 @@ app.use("/api/action-items", requireAuth, actionItemRoutes);
 app.use("/api/talking-points", requireAuth, talkingPointRoutes);
 app.use("/api/review", requireAuth, reviewRoutes);
 app.use("/api/calendar", requireAuth, calendarRoutes);
+app.use("/api/manager-leave", requireAuth, managerLeaveRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

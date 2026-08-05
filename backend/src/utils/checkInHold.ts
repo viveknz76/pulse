@@ -4,6 +4,7 @@ import {
   dateOnlyInTimeZone,
   parseDateOnly,
 } from "./dateOnly";
+import { dueDateAfterManagerLeave, ManagerLeaveRange } from "./managerLeave";
 
 type HoldFields = {
   checkInsPausedAt: Date | null;
@@ -31,35 +32,43 @@ export function isCheckInScheduleOnHold(
 export function effectiveNextDueDate(
   member: HoldFields & { startDate: Date; cadence: Cadence },
   lastCompleted?: CompletedCheckIn,
-  activeCheckIn?: ActiveCheckIn
+  activeCheckIn?: ActiveCheckIn,
+  managerLeavePeriods: ManagerLeaveRange[] = []
 ): Date {
-  // An in-progress check-in represents the current conversation, so its
-  // scheduled date takes precedence over the cadence-derived date.
-  if (activeCheckIn) return activeCheckIn.scheduledDate;
+  let dueDate: Date;
 
-  let anchor = lastCompleted?.scheduledDate ?? member.startDate;
+  if (activeCheckIn) {
+    // An in-progress check-in represents the current conversation, so its
+    // scheduled date takes precedence over the cadence-derived date.
+    dueDate = activeCheckIn.scheduledDate;
+  } else {
+    let anchor = lastCompleted?.scheduledDate ?? member.startDate;
 
-  if (member.checkInsPausedAt && member.checkInsResumeOn) {
-    const resumeDate = dateOnlyFromPrisma(member.checkInsResumeOn);
-    const lastCompletionDate = lastCompleted?.completedAt
-      ? dateOnlyInTimeZone(lastCompleted.completedAt)
-      : lastCompleted
-        ? dateOnlyFromPrisma(lastCompleted.scheduledDate)
-        : null;
-    if (!lastCompletionDate || lastCompletionDate < resumeDate) {
-      return member.checkInsResumeOn;
+    if (member.checkInsPausedAt && member.checkInsResumeOn) {
+      const resumeDate = dateOnlyFromPrisma(member.checkInsResumeOn);
+      const lastCompletionDate = lastCompleted?.completedAt
+        ? dateOnlyInTimeZone(lastCompleted.completedAt)
+        : lastCompleted
+          ? dateOnlyFromPrisma(lastCompleted.scheduledDate)
+          : null;
+      if (!lastCompletionDate || lastCompletionDate < resumeDate) {
+        dueDate = member.checkInsResumeOn;
+        return dueDateAfterManagerLeave(dueDate, member.cadence, managerLeavePeriods);
+      }
+
+      // A draft started before leave may be completed after the employee
+      // returns. In that one case, resume cadence from completion rather than
+      // leaving the person immediately overdue against the old draft date.
+      if (
+        lastCompleted?.completedAt &&
+        dateOnlyFromPrisma(lastCompleted.scheduledDate) < resumeDate
+      ) {
+        anchor = parseDateOnly(dateOnlyInTimeZone(lastCompleted.completedAt));
+      }
     }
 
-    // A draft started before leave may be completed after the employee
-    // returns. In that one case, resume cadence from completion rather than
-    // leaving the person immediately overdue against the old draft date.
-    if (
-      lastCompleted?.completedAt &&
-      dateOnlyFromPrisma(lastCompleted.scheduledDate) < resumeDate
-    ) {
-      anchor = parseDateOnly(dateOnlyInTimeZone(lastCompleted.completedAt));
-    }
+    dueDate = nextDueDate(anchor, member.cadence);
   }
 
-  return nextDueDate(anchor, member.cadence);
+  return dueDateAfterManagerLeave(dueDate, member.cadence, managerLeavePeriods);
 }

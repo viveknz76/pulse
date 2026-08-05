@@ -15,10 +15,12 @@ import { api } from "../api/client";
 import {
   CalendarConnectionStatus,
   CheckInCalendarEvent,
+  ManagerLeavePeriod,
 } from "../types";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { PageLoading } from "../components/PageLoading";
 import { PageTitle, SectionLabel } from "../components/Typography";
+import { ManagerLeavePlanner } from "../components/ManagerLeavePlanner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,11 +48,16 @@ export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState<CalendarConnectionStatus | null>(null);
   const [events, setEvents] = useState<CheckInCalendarEvent[]>([]);
+  const [leavePeriods, setLeavePeriods] = useState<ManagerLeavePeriod[]>([]);
   const [working, setWorking] = useState(false);
 
   const load = useCallback(async () => {
-    const nextStatus = await api.get<CalendarConnectionStatus>("/api/calendar/status");
+    const [nextStatus, nextLeavePeriods] = await Promise.all([
+      api.get<CalendarConnectionStatus>("/api/calendar/status"),
+      api.get<ManagerLeavePeriod[]>("/api/manager-leave"),
+    ]);
     setStatus(nextStatus);
+    setLeavePeriods(nextLeavePeriods);
     if (!nextStatus.connected) {
       setEvents([]);
       return;
@@ -213,6 +220,11 @@ export default function CalendarPage() {
           </ul>
         </Card>
       </div>
+
+      <section className="mb-9">
+        <SectionLabel>Your availability</SectionLabel>
+        <ManagerLeavePlanner periods={leavePeriods} onChanged={load} />
+      </section>
 
       <section>
         <SectionLabel>Upcoming Pulse events</SectionLabel>
